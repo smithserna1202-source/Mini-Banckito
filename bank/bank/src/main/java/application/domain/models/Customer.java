@@ -1,19 +1,21 @@
 package application.domain.models;
 
-public class Customer {
-    private String id;
-    private String name;
-    private String email;
+import application.domain.valueobjects.Email;
 
-    public Customer(String id, String name, String email) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("El ID del cliente no puede estar vacío.");
+public class Customer {
+    private final String id;
+    private String fullName;
+    private Email email;
+
+    public Customer(String id, String fullName, Email email) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Customer ID cannot be empty");
         }
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío.");
+        if (email == null) {
+            throw new IllegalArgumentException("Email cannot be null");
         }
         this.id = id;
-        this.name = name;
+        this.fullName = fullName;
         this.email = email;
     }
 
@@ -21,11 +23,19 @@ public class Customer {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public String getFullName() {
+        return fullName;
     }
 
-    public String getEmail() {
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public Email getEmail() {
         return email;
+    }
+
+    public void setEmail(Email email) {
+        this.email = email;
     }
 }
