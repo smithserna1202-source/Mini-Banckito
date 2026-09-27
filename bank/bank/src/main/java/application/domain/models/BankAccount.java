@@ -6,37 +6,23 @@ import application.domain.valueobjects.Money;
 public class BankAccount {
     private final AccountNumber accountNumber;
     private Money balance;
-    private final String ownerId;
 
-    public BankAccount(AccountNumber accountNumber, Money balance, String ownerId) {
-        if (accountNumber == null) {
-            throw new IllegalArgumentException("Account number cannot be null");
-        }
-        if (balance == null) {
-            throw new IllegalArgumentException("Balance cannot be null");
-        }
+    public BankAccount(AccountNumber accountNumber, Money initialBalance) {
         this.accountNumber = accountNumber;
-        this.balance = balance;
-        this.ownerId = ownerId;
+        this.balance = initialBalance;
     }
 
-    public AccountNumber getAccountNumber() {
-        return accountNumber;
-    }
-
-    public Money getBalance() {
-        return balance;
-    }
-
-    public String getOwnerId() {
-        return ownerId;
-    }
+    public AccountNumber getAccountNumber() { return accountNumber; }
+    public Money getBalance() { return balance; }
 
     public void deposit(Money amount) {
-        this.balance = this.balance.add(amount);
+        this.balance = new Money(this.balance.getAmount() + amount.getAmount());
     }
 
     public void withdraw(Money amount) {
-        this.balance = this.balance.subtract(amount);
+        if (amount.getAmount() > this.balance.getAmount()) {
+            throw new IllegalArgumentException("Insufficient funds");
+        }
+        this.balance = new Money(this.balance.getAmount() - amount.getAmount());
     }
 }
