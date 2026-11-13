@@ -19,7 +19,7 @@ public class CompanyController {
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateCompany r,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   if(companies.findById(r.id()).isPresent()||companies.findByNit(r.nit()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Company id or NIT already exists");
-  Company c=new Company(r.id(),r.legalName(),r.nit(),new Email(r.email()),r.phone()==null?null:new PhoneNumber(r.phone()),r.address(),r.legalRepresentativeId());
+  Company c=new Company(r.id(),r.legalName(),r.nit(),new application.domain.valueobjects.Email(r.email()),r.phone()==null?null:new PhoneNumber(r.phone()),r.address(),r.legalRepresentativeId());
   companies.save(c);audit.record("COMPANY_REGISTERED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),c.getId(),Map.of("nit",c.getNit()));
   return Map.of("id",c.getId(),"legalName",c.getLegalName(),"nit",c.getNit(),"active",c.isActive());
  }
