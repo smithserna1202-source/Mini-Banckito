@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.springframework.scheduling.annotation.Scheduled;
 public class CompanyTransferService {
  private final BankAccountRepository accounts; private final AuthorizationService authorization; private final AuditService audit;
  private final ConcurrentMap<String,BankTransfer> transfers=new ConcurrentHashMap<>(); private final Money approvalThreshold;
@@ -41,6 +42,7 @@ public class CompanyTransferService {
   if(transfer.getStatus()==application.domain.enums.TransferStatus.EXPIRED){audit.record("TRANSFER_EXPIRED",supervisorId,role.name(),id,Map.of());return;}
   transfer.reject(supervisorId);audit.record("TRANSFER_REJECTED",supervisorId,role.name(),id,Map.of());
  }
+ @Scheduled(fixedDelayString="${bank.transfers.expiration-delay-ms:60000}")
  public void expirePending(){
   transfers.values().forEach(t->{var before=t.getStatus();t.expire();if(before!=t.getStatus())audit.record("TRANSFER_EXPIRED","SYSTEM","SYSTEM",t.getId(),Map.of());});
  }
