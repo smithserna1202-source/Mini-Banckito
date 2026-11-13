@@ -22,6 +22,8 @@ public class CustomerController {
   String id=AuthenticatedActor.id(actor);
   Customer c=new Customer(id,r.name(),r.identification(),new application.domain.valueobjects.Email(r.email()),r.phone()==null?null:new PhoneNumber(r.phone()),r.address(),r.birthDate(),true);
   if(customers.findById(id).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Customer id already exists");
+  if(customers.findByIdentification(r.identification()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Identification already exists");
+  if(customers.findByEmail(r.email()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Email already exists");
   customers.save(c);audit.record("CUSTOMER_REGISTERED",id,role.name(),id,Map.of("identification",r.identification()));
   return Map.of("id",c.getId(),"name",c.getName(),"email",c.getEmail().getValue(),"active",c.isActive());
  }
