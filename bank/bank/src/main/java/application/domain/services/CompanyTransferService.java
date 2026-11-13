@@ -16,10 +16,11 @@ public class CompanyTransferService {
   this.accounts=Objects.requireNonNull(accounts);this.authorization=Objects.requireNonNull(authorization);this.audit=Objects.requireNonNull(audit);
   if(approvalThreshold==null||!approvalThreshold.isPositive())throw new IllegalArgumentException("Approval threshold must be positive");this.approvalThreshold=approvalThreshold;
  }
- public BankTransfer create(String sourceId,String destinationId,Money amount,String userId,Role role){
+ public BankTransfer create(String companyId,String sourceId,String destinationId,Money amount,String userId,Role role){
   authorization.require(role,AuthorizationService.Action.REQUEST_TRANSFER);
   BankAccount source=accounts.findByAccountNumber(sourceId).orElseThrow(()->new IllegalArgumentException("Source account not found"));
   BankAccount target=accounts.findByAccountNumber(destinationId).orElseThrow(()->new IllegalArgumentException("Destination account not found"));
+  if(!source.getOwnerId().equals(companyId))throw new SecurityException("Employee cannot operate on another company account");
   if(source.getStatus()!=application.domain.enums.AccountStatus.ACTIVE||target.getStatus()!=application.domain.enums.AccountStatus.ACTIVE)throw new IllegalStateException("Both accounts must be active");
   boolean approval=amount.isGreaterThan(approvalThreshold);
   BankTransfer transfer=new BankTransfer(UUID.randomUUID().toString(),sourceId,destinationId,amount,userId,approval);
