@@ -33,7 +33,7 @@ public class LoanController {
   return Map.of("loanId",id,"status","REJECTED");
  }
  @PostMapping("/{id}/disburse") public Map<String,String> disburse(@PathVariable String id,Authentication actor){
-  if(AuthenticatedActor.role(actor)!=Role.INTERNAL_ANALYST&&AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only an analyst can disburse a loan");
+  if(AuthenticatedActor.role(actor)!=Role.INTERNAL_ANALYST)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only an analyst can disburse a loan");
   loans.disburse(id);return Map.of("loanId",id,"status","DISBURSED");
  }
 }
