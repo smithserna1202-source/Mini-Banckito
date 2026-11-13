@@ -5,11 +5,13 @@ import application.domain.services.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-@Configuration
-@Profile("!sql")
+import org.springframework.scheduling.annotation.EnableScheduling;
+@Configuration @Profile("!sql") @EnableScheduling
 public class BankingConfiguration {
  @Bean public BankAccountRepository bankAccountRepository(){return new InMemoryBankAccountRepository();}
  @Bean public CustomerRepository customerRepository(){return new InMemoryCustomerRepository();}
+ @Bean public CompanyRepository companyRepository(){return new InMemoryCompanyRepository();}
+ @Bean public BankProductRepository bankProductRepository(){return new InMemoryBankProductRepository();}
  @Bean public TransactionRepository transactionRepository(){return new InMemoryTransactionRepository();}
  @Bean public ScheduledTransferRepository scheduledTransferRepository(){return new InMemoryScheduledTransferRepository();}
  @Bean public LoanRepository loanRepository(){return new InMemoryLoanRepository();}
