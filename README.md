@@ -67,6 +67,7 @@ curl -u C001:$BANK_DEFAULT_PASSWORD http://localhost:8080/api/customers/C001
 - `GET /api/accounts/{number}/balance` — consulta de saldo.
 - `POST /api/accounts/{number}/deposit`, `POST /api/accounts/{number}/withdraw` — depósitos y retiros.
 - `POST /api/transfers/internal` — transferencia interna.
+- `GET /api/transfers/history/{accountNumber}` — historial de una cuenta, sujeto a permisos de titularidad o ventanilla.
 - `POST /api/company-transfers`, `POST /api/company-transfers/{id}/approve`, `POST /api/company-transfers/{id}/reject` — transferencias de empresa.
 - `POST /api/scheduled-transfers`, `POST /api/scheduled-transfers/{id}/cancel` — transferencias programadas.
 - `POST /api/loans`, `POST /api/loans/{id}/approve`, `POST /api/loans/{id}/reject`, `POST /api/loans/{id}/disburse` — solicitudes, decisiones y desembolsos de préstamos.
@@ -82,7 +83,7 @@ curl -u teller01:$BANK_DEFAULT_PASSWORD -X POST http://localhost:8080/api/accoun
 ## Persistencia y límites conocidos
 
 - El perfil predeterminado es `sql`: H2 guarda cuentas, clientes, empresas y productos en un archivo local bajo `bank/bank/data`.
-- Préstamos, transferencias internas/empresariales, transferencias programadas, transacciones y bitácora todavía usan adaptadores en memoria; esos datos se pierden al reiniciar.
+- Préstamos, transferencias internas/empresariales, transferencias programadas y bitácora todavía usan adaptadores en memoria; esos datos se pierden al reiniciar. Las transacciones de depósitos, retiros y transferencias internas se guardan en SQL.
 - La bitácora es de solo anexado desde los servicios de dominio; la persistencia MongoDB requiere configurar y probar el perfil y el servidor Mongo.
 - El vencimiento de transferencias empresariales se revisa automáticamente cada minuto; las transferencias programadas se procesan cada 30 segundos.
 - El servicio interbancario externo rechaza la operación porque no existe integración de liquidación con otra entidad.
