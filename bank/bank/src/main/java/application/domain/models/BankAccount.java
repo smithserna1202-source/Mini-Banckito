@@ -23,6 +23,8 @@ public class BankAccount {
  public void withdraw(Money amount){ensureOperational();requirePositive(amount);if(amount.isGreaterThan(balance))throw new IllegalArgumentException("Insufficient funds");balance=balance.subtract(amount);}
  public void freeze(){if(status!=AccountStatus.ACTIVE)throw new IllegalStateException("Only active accounts can be frozen");status=AccountStatus.FROZEN;}
  public void unfreeze(){if(status!=AccountStatus.FROZEN)throw new IllegalStateException("Only frozen accounts can be reactivated");status=AccountStatus.ACTIVE;}
+ public void block(){if(status==AccountStatus.CLOSED||status==AccountStatus.CANCELLED)throw new IllegalStateException("Closed accounts cannot be blocked");status=AccountStatus.BLOCKED;}
+ public void cancel(){if(balance.isPositive())throw new IllegalStateException("An account with a balance cannot be cancelled");status=AccountStatus.CANCELLED;}
  public void close(){if(balance.isPositive())throw new IllegalStateException("An account with a balance cannot be closed");status=AccountStatus.CLOSED;}
  private void ensureOperational(){if(status!=AccountStatus.ACTIVE)throw new IllegalStateException("Account is not operational: "+status);}
  private void requirePositive(Money amount){if(amount==null||!amount.isPositive())throw new IllegalArgumentException("Amount must be positive");}
