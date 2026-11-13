@@ -3,6 +3,10 @@ import application.domain.enums.AccountType;
 import application.domain.enums.Role;
 import application.domain.models.BankAccount;
 import application.domain.ports.BankAccountRepository;
+import application.domain.ports.TransactionRepository;
+import application.domain.models.Transaction;
+import application.domain.enums.TransactionType;
+import java.util.UUID;
 import application.domain.services.*;
 import application.domain.valueobjects.AccountNumber;
 import application.domain.valueobjects.Money;
@@ -16,8 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 @RestController @RequestMapping("/api/accounts")
 public class AccountController {
- private final BankAccountRepository accounts;private final CreateAccountService create;private final DepositService deposits;private final WithdrawalService withdrawals;private final GetAccountBalanceService balances;private final AuditService audit;private final AuthorizationService auth;
- public AccountController(BankAccountRepository a,CreateAccountService c,DepositService d,WithdrawalService w,GetAccountBalanceService b,AuditService audit,AuthorizationService auth){accounts=a;create=c;deposits=d;withdrawals=w;balances=b;this.audit=audit;this.auth=auth;}
+ private final BankAccountRepository accounts;private final CreateAccountService create;private final DepositService deposits;private final WithdrawalService withdrawals;private final GetAccountBalanceService balances;private final AuditService audit;private final AuthorizationService auth;private final TransactionRepository transactions;
+ public AccountController(BankAccountRepository a,CreateAccountService c,DepositService d,WithdrawalService w,GetAccountBalanceService b,AuditService audit,AuthorizationService auth,TransactionRepository transactions){accounts=a;create=c;deposits=d;withdrawals=w;balances=b;this.audit=audit;this.auth=auth;this.transactions=transactions;}
  public record CreateAccountRequest(@NotBlank String accountNumber,@NotBlank String ownerId,@NotNull AccountType type,@NotNull @DecimalMin("0.00") BigDecimal initialBalance,@Pattern(regexp="[A-Z]{3}") String currency){}
  public record AmountRequest(@NotNull @DecimalMin(value="0.01") BigDecimal amount){}
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateAccountRequest r,Authentication actor){
@@ -35,12 +39,12 @@ public class AccountController {
  }
  @PostMapping("/{number}/deposit") public Map<String,Object> deposit(@PathVariable String number,@Valid @RequestBody AmountRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);auth.require(role,AuthorizationService.Action.DEPOSIT);
-  BankAccount a=find(number);deposits.deposit(a,Money.of(r.amount().toPlainString()));accounts.save(a);
+  BankAccount a=find(number);Money amount=Money.of(r.amount().toPlainString());deposits.deposit(a,amount);accounts.save(a);transactions.save(new Transaction(UUID.randomUUID().toString(),number,amount,TransactionType.DEPOSIT));
   audit.record("DEPOSIT",AuthenticatedActor.id(actor),role.name(),number,Map.of("amount",r.amount().toPlainString()));return Map.of("balance",a.getBalance().toString());
  }
  @PostMapping("/{number}/withdraw") public Map<String,Object> withdraw(@PathVariable String number,@Valid @RequestBody AmountRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);auth.require(role,AuthorizationService.Action.WITHDRAW);
-  BankAccount a=find(number);withdrawals.withdraw(a,Money.of(r.amount().toPlainString()));accounts.save(a);
+  BankAccount a=find(number);Money amount=Money.of(r.amount().toPlainString());withdrawals.withdraw(a,amount);accounts.save(a);transactions.save(new Transaction(UUID.randomUUID().toString(),number,amount,TransactionType.WITHDRAWAL));
   audit.record("WITHDRAWAL",AuthenticatedActor.id(actor),role.name(),number,Map.of("amount",r.amount().toPlainString()));return Map.of("balance",a.getBalance().toString());
  }
  private BankAccount find(String n){return accounts.findByAccountNumber(n).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Account not found"));}
