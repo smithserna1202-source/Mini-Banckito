@@ -6,9 +6,12 @@ import application.domain.ports.ScheduledTransferRepository;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.scheduling.annotation.Scheduled;
 public class ExecuteScheduledTransfersService {
  private final ScheduledTransferRepository transfers;private final BankAccountRepository accounts;private final AuditService audit;
  public ExecuteScheduledTransfersService(ScheduledTransferRepository transfers,BankAccountRepository accounts,AuditService audit){this.transfers=Objects.requireNonNull(transfers);this.accounts=Objects.requireNonNull(accounts);this.audit=Objects.requireNonNull(audit);}
+ @Scheduled(fixedDelayString="${bank.transfers.scheduler-delay-ms:30000}")
+ public void executeAllDue(){for(ScheduledTransfer t:transfers.findAll())executeDue(t);}
  public void executeDue(ScheduledTransfer transfer){
   if(transfer.getStatus()!=ScheduledTransfer.Status.SCHEDULED||transfer.getScheduledAt().isAfter(Instant.now()))return;
   BankAccount from=accounts.findByAccountNumber(transfer.getSource().getValue()).orElseThrow(()->new IllegalArgumentException("Source account not found"));
