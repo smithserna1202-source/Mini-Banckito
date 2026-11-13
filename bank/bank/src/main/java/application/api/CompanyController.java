@@ -16,7 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class CompanyController {
  private final CompanyRepository companies;private final AuditService audit;
  public CompanyController(CompanyRepository c,AuditService a){companies=c;audit=a;}
- public record CreateCompany(@NotBlank String id,@NotBlank String legalName,@NotBlank String nit,@Email String email,@Pattern(regexp="\\d{7,15}") String phone,String address,@NotBlank String legalRepresentativeId){}
+ public record CreateCompany(@NotBlank String id,@NotBlank String legalName,@NotBlank String nit,@jakarta.validation.constraints.Email String email,@Pattern(regexp="\\d{7,15}") String phone,String address,@NotBlank String legalRepresentativeId){}
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateCompany r,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   if(companies.findById(r.id()).isPresent()||companies.findByNit(r.nit()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Company id or NIT already exists");
