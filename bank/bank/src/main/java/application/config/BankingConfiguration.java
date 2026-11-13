@@ -25,6 +25,8 @@ public class BankingConfiguration {
  public BankProductRepository bankProductRepository(){return new InMemoryBankProductRepository();}
  @Bean @ConditionalOnMissingBean(TransactionRepository.class)
  public TransactionRepository transactionRepository(){return new InMemoryTransactionRepository();}
+ @Bean @ConditionalOnMissingBean
+ public GetTransactionHistoryService getTransactionHistoryService(TransactionRepository repository){return new GetTransactionHistoryService(repository);}
  @Bean @ConditionalOnMissingBean(ScheduledTransferRepository.class)
  public ScheduledTransferRepository scheduledTransferRepository(){return new InMemoryScheduledTransferRepository();}
  @Bean @ConditionalOnMissingBean(LoanRepository.class)
