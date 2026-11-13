@@ -3,7 +3,6 @@ import application.domain.enums.Role;
 import application.domain.models.Company;
 import application.domain.ports.CompanyRepository;
 import application.domain.services.AuditService;
-import application.domain.valueobjects.Email;
 import application.domain.valueobjects.PhoneNumber;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
