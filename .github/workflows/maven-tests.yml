@@ -14,5 +14,21 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
-      - name: Run tests
-        run: mvn -B -f bank/bank/pom.xml test
+      - name: Run unit tests
+        run: mvn -B -f bank/bank/pom.xml clean test
+      - name: Smoke test Spring Boot API
+        env:
+          BANK_DEFAULT_PASSWORD: "CI-only-password-12345"
+        run: |
+          cd bank/bank
+          mvn -B spring-boot:run > app.log 2>&1 &
+          APP_PID=$!
+          trap 'kill $APP_PID 2>/dev/null || true' EXIT
+          for attempt in {1..45}; do
+            if curl --fail --silent http://localhost:8080/api/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat app.log
+          exit 1
