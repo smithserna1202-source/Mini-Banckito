@@ -1,9 +1,9 @@
 package application.domain.ports;
-
 import application.domain.models.ScheduledTransfer;
+import java.util.List;
 import java.util.Optional;
-
 public interface ScheduledTransferRepository {
-    void save(ScheduledTransfer scheduledTransfer);
-    Optional<ScheduledTransfer> findById(String id);
+ void save(ScheduledTransfer scheduledTransfer);
+ Optional<ScheduledTransfer> findById(String id);
+ List<ScheduledTransfer> findAll();
 }
