@@ -12,7 +12,6 @@ public class MongoAuditLogAdapter implements AuditLogRepository {
  public MongoAuditLogAdapter(SpringDataAuditLogRepository repository){this.repository=Objects.requireNonNull(repository);}
  @Override public void append(AuditLogEntry entry){repository.insert(new AuditLogDocument(entry));}
  @Override public List<AuditLogEntry> findAll(){
-  // Audit records are persisted as append-only documents; this adapter intentionally exposes no update/delete operation.
-  return repository.findAll().stream().map(d->new AuditLogEntry(d.getId(),d.getOperationType(),d.getUserId(),d.getRole(),d.getAffectedProductId(),d.getDetails())).toList();
+  return repository.findAll().stream().map(d->new AuditLogEntry(d.getId(),d.getOperationType(),d.getOccurredAt(),d.getUserId(),d.getRole(),d.getAffectedProductId(),d.getDetails())).toList();
  }
 }
