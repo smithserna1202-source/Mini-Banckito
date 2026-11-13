@@ -16,7 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class CustomerController {
  private final CustomerRepository customers;private final AuditService audit;
  public CustomerController(CustomerRepository c,AuditService a){customers=c;audit=a;}
- public record CreateCustomerRequest(@NotBlank String name,@NotBlank String identification,@jakarta.validation.constraints.Email String email,@Pattern(regexp="\\d{7,15}") String phone,LocalDate birthDate,String address){}
+ public record CreateCustomerRequest(@NotBlank String name,@NotBlank String identification,@jakarta.validation.constraints.Email String email,@Pattern(regexp="\\d{7,15}") String phone,@NotNull LocalDate birthDate,String address){}
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateCustomerRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);if(role!=Role.ADMINISTRATOR&&role!=Role.NATURAL_PERSON_CUSTOMER)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Role cannot register a natural-person customer");
   String id=AuthenticatedActor.id(actor);
