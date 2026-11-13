@@ -81,8 +81,8 @@ curl -u teller01:$BANK_DEFAULT_PASSWORD -X POST http://localhost:8080/api/accoun
 
 ## Persistencia y límites conocidos
 
-- El perfil predeterminado es `sql`: H2 guarda cuentas y clientes en un archivo local bajo `bank/bank/data`.
-- Préstamos, transferencias, empresas, productos, transacciones y bitácora usan adaptadores en memoria en esta versión; esos datos se pierden al reiniciar.
+- El perfil predeterminado es `sql`: H2 guarda cuentas, clientes, empresas y productos en un archivo local bajo `bank/bank/data`.
+- Préstamos, transferencias internas/empresariales, transferencias programadas, transacciones y bitácora todavía usan adaptadores en memoria; esos datos se pierden al reiniciar.
 - La bitácora es de solo anexado desde los servicios de dominio; la persistencia MongoDB requiere configurar y probar el perfil y el servidor Mongo.
 - El vencimiento de transferencias empresariales se revisa automáticamente cada minuto; las transferencias programadas se procesan cada 30 segundos.
 - El servicio interbancario externo rechaza la operación porque no existe integración de liquidación con otra entidad.
