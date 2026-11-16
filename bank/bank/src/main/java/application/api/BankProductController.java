@@ -11,6 +11,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 @RestController @RequestMapping("/api/products")
 public class BankProductController {
@@ -26,6 +27,7 @@ public class BankProductController {
    return item;
   }).toList();
  }
+ @Transactional
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateProduct r,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   if(products.findById(r.id()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Product id already exists");
