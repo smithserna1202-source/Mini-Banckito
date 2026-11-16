@@ -71,9 +71,10 @@ public class BankingConfiguration {
 
     @Bean @ConditionalOnMissingBean
     public CompanyTransferService companyTransferService(BankAccountRepository accounts,
-            BankTransferRepository transfers, AuthorizationService authorization, AuditService audit) {
+            BankTransferRepository transfers, AuthorizationService authorization, AuditService audit,
+            TransactionRepository transactions) {
         return new CompanyTransferService(accounts, transfers, authorization, audit,
-            application.domain.valueobjects.Money.of("5000000"));
+            application.domain.valueobjects.Money.of("5000000"), transactions);
     }
 
     @Bean @ConditionalOnMissingBean
