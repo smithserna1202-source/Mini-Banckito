@@ -12,6 +12,6 @@ public class TransactionEntity {
  @Enumerated(EnumType.STRING) @Column(nullable=false) private TransactionType type;
  @Column(nullable=false) private Instant createdAt;
  protected TransactionEntity(){}
- public TransactionEntity(Transaction t){id=t.getId();accountId=t.getAccountId();amount=t.getAmount().getAmountDecimal();type=t.getType();createdAt=Instant.now();}
+ public TransactionEntity(Transaction t){id=t.getId();accountId=t.getAccountId();amount=t.getAmount().getAmountDecimal();type=t.getType();createdAt=t.getCreatedAt();}
  public String getId(){return id;} public String getAccountId(){return accountId;} public BigDecimal getAmount(){return amount;} public TransactionType getType(){return type;} public Instant getCreatedAt(){return createdAt;}
 }
