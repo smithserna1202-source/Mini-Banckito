@@ -69,6 +69,10 @@ public class LoanController {
     @GetMapping
     public List<Map<String,Object>> list(Authentication actor) {
         Role role=AuthenticatedActor.role(actor);
+        if(role!=Role.ADMINISTRATOR&&role!=Role.INTERNAL_ANALYST&&role!=Role.NATURAL_PERSON_CUSTOMER
+            &&role!=Role.COMPANY_CUSTOMER&&role!=Role.COMPANY_OPERATIONS_EMPLOYEE
+            &&role!=Role.COMPANY_SUPERVISOR&&role!=Role.COMMERCIAL_EMPLOYEE)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Loan listing is not allowed");
         String requester=AuthenticatedActor.id(actor);
         Set<String> commercialCustomers=role==Role.COMMERCIAL_EMPLOYEE
             ?assignments.findByEmployeeUsernameAndActiveTrue(requester).stream()
