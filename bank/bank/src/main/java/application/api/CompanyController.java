@@ -16,11 +16,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class CompanyController {
  private final CompanyRepository companies;private final CustomerRepository customers;private final AuditService audit;
  public CompanyController(CompanyRepository c,CustomerRepository customers,AuditService a){companies=c;this.customers=customers;audit=a;}
- public record CreateCompany(@NotBlank String id,@NotBlank String legalName,@NotBlank String nit,@jakarta.validation.constraints.Email String email,@Pattern(regexp="\\d{7,15}") String phone,String address,@NotBlank String legalRepresentativeId){}
+ public record CreateCompany(@NotBlank String id,@NotBlank String legalName,@NotBlank String nit,@NotBlank @jakarta.validation.constraints.Email String email,@NotBlank @Pattern(regexp="\\d{7,15}") String phone,@NotBlank String address,@NotBlank String legalRepresentativeId){}
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateCompany r,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   if(companies.findById(r.id()).isPresent()||companies.findByNit(r.nit()).isPresent()||customers.findByIdentification(r.nit()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Company id or NIT already exists in the bank");
-  Company c=new Company(r.id(),r.legalName(),r.nit(),new application.domain.valueobjects.Email(r.email()),r.phone()==null?null:new PhoneNumber(r.phone()),r.address(),r.legalRepresentativeId());
+  if(customers.findById(r.legalRepresentativeId()).filter(application.domain.models.Customer::isActive).isEmpty())throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"An active natural-person legal representative is required");
+  Company c=new Company(r.id(),r.legalName(),r.nit(),new application.domain.valueobjects.Email(r.email()),new PhoneNumber(r.phone()),r.address(),r.legalRepresentativeId());
   companies.save(c);audit.record("COMPANY_REGISTERED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),c.getId(),Map.of("nit",c.getNit()));
   return Map.of("id",c.getId(),"legalName",c.getLegalName(),"nit",c.getNit(),"active",c.isActive());
  }
