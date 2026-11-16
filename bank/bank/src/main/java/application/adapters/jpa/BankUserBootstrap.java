@@ -61,8 +61,17 @@ public class BankUserBootstrap implements ApplicationRunner {
                     definition[3]);
             String relatedEntityId = companyId == null ? definition[2] : companyId;
 
-            users.save(new BankUserEntity(username, encoder.encode(rawPassword),
-                Role.valueOf(definition[1]).name(), relatedEntityId, companyId, true));
+            BankUserEntity user;
+            if ("natural-customer".equals(definition[0])) {
+                user = new BankUserEntity(username, encoder.encode(rawPassword),
+                    Role.valueOf(definition[1]).name(), relatedEntityId, companyId, true,
+                    "natural-customer", "DEMO-C001", "natural-customer@demo.local",
+                    "3000000000", java.time.LocalDate.of(1990, 1, 1), "Datos de demostración");
+            } else {
+                user = new BankUserEntity(username, encoder.encode(rawPassword),
+                    Role.valueOf(definition[1]).name(), relatedEntityId, companyId, true);
+            }
+            users.save(user);
         }
     }
 }
