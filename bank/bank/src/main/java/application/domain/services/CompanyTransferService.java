@@ -7,6 +7,9 @@ import application.domain.models.BankAccount;
 import application.domain.models.BankTransfer;
 import application.domain.ports.BankAccountRepository;
 import application.domain.ports.BankTransferRepository;
+import application.domain.ports.TransactionRepository;
+import application.domain.models.Transaction;
+import application.domain.enums.TransactionType;
 import application.domain.valueobjects.Money;
 import java.util.Map;
 import java.util.Objects;
@@ -20,10 +23,17 @@ public class CompanyTransferService {
     private final AuthorizationService authorization;
     private final AuditService audit;
     private final Money approvalThreshold;
+    private final TransactionRepository transactions;
 
     public CompanyTransferService(BankAccountRepository accounts, BankTransferRepository transfers,
                                   AuthorizationService authorization, AuditService audit,
                                   Money approvalThreshold) {
+        this(accounts, transfers, authorization, audit, approvalThreshold, null);
+    }
+
+    public CompanyTransferService(BankAccountRepository accounts, BankTransferRepository transfers,
+                                  AuthorizationService authorization, AuditService audit,
+                                  Money approvalThreshold, TransactionRepository transactions) {
         this.accounts = Objects.requireNonNull(accounts);
         this.transfers = Objects.requireNonNull(transfers);
         this.authorization = Objects.requireNonNull(authorization);
@@ -32,6 +42,7 @@ public class CompanyTransferService {
             throw new IllegalArgumentException("Approval threshold must be positive");
         }
         this.approvalThreshold = approvalThreshold;
+        this.transactions = transactions;
     }
 
     @Transactional
@@ -117,6 +128,8 @@ public class CompanyTransferService {
             .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
         BankAccount target = accounts.findByAccountNumber(transfer.getDestinationAccount())
             .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
+        Money sourceBefore = source.getBalance();
+        Money targetBefore = target.getBalance();
         source.withdraw(transfer.getAmount());
         try {
             target.deposit(transfer.getAmount());
@@ -128,8 +141,17 @@ public class CompanyTransferService {
         accounts.save(source);
         accounts.save(target);
         transfers.save(transfer);
+        if (transactions != null) {
+            transactions.save(new Transaction(UUID.randomUUID().toString(), transfer.getSourceAccount(),
+                transfer.getAmount(), TransactionType.DEBIT_TRANSFER, transfer.getCreatedAt()));
+            transactions.save(new Transaction(UUID.randomUUID().toString(), transfer.getDestinationAccount(),
+                transfer.getAmount(), TransactionType.CREDIT_TRANSFER, transfer.getCreatedAt()));
+        }
         audit.record("TRANSFER_EXECUTED", transfer.getCreatorUserId(), "COMPANY", transfer.getId(),
             Map.of("amount", transfer.getAmount().toString(),
-                "source", transfer.getSourceAccount(), "destination", transfer.getDestinationAccount()));
+                "source", transfer.getSourceAccount(), "sourceBalanceBefore", sourceBefore.toString(),
+                "sourceBalanceAfter", source.getBalance().toString(),
+                "destination", transfer.getDestinationAccount(), "destinationBalanceBefore", targetBefore.toString(),
+                "destinationBalanceAfter", target.getBalance().toString()));
     }
 }
