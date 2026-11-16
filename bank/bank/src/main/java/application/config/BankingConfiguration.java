@@ -53,8 +53,8 @@ public class BankingConfiguration {
 
     @Bean @ConditionalOnMissingBean
     public CreateAccountService createAccountService(BankAccountRepository repository,
-            CustomerRepository customers, CompanyRepository companies) {
-        return new CreateAccountService(repository, customers, companies);
+            CustomerRepository customers, CompanyRepository companies, BankProductRepository products) {
+        return new CreateAccountService(repository, customers, companies, products);
     }
 
     @Bean @ConditionalOnMissingBean
