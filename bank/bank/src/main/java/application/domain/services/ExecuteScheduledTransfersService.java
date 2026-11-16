@@ -23,6 +23,7 @@ public class ExecuteScheduledTransfersService {
         this.audit = Objects.requireNonNull(audit);
     }
 
+    @Transactional
     @Scheduled(fixedDelayString = "${bank.transfers.scheduler-delay-ms:30000}")
     public void executeAllDue() {
         for (ScheduledTransfer transfer : transfers.findAll()) {
