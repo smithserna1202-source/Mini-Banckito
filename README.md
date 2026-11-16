@@ -116,8 +116,8 @@ El empleado comercial solo puede consultar los perfiles que tenga asignados.
 ## API disponible
 
 - `GET /api/health` — estado de la aplicación.
-- `POST /api/customers`, `GET /api/customers/{id}` — registro y consulta de clientes.
-- `POST /api/companies`, `GET /api/companies/{id}` — registro y consulta de empresas.
+- `POST /api/customers`, `GET /api/customers/{id}`, `POST /api/customers/{id}/block`, `POST /api/customers/{id}/unblock` — registro, consulta y control de estado de clientes.
+- `POST /api/companies`, `GET /api/companies/{id}`, `POST /api/companies/{id}/block`, `POST /api/companies/{id}/unblock` — registro, consulta y control de estado de empresas.
 - `GET /api/products`, `POST /api/products` — catálogo de productos.
 - `POST /api/accounts` — apertura de cuentas.
 - `GET /api/accounts` — listado filtrado por titular, empresa o clientes asignados.
