@@ -105,7 +105,7 @@ class SecurityApiIntegrationTest {
     }
 
     @Test
-    void credentialsAndCompanyRoleAreLoadedFromPersistentUserRepository() {
+    void credentialsAndCompanyRoleAreLoadedFromPersistentUserRepository() throws Exception {
         bankUsers.save(new BankUserEntity("persisted-operator",
             passwordEncoder.encode("Persisted-Password-123"), "COMPANY_OPERATIONS_EMPLOYEE",
             "COMPANY077", "COMPANY077", true));
@@ -115,6 +115,12 @@ class SecurityApiIntegrationTest {
             .anyMatch(a -> a.getAuthority().equals("ROLE_COMPANY_OPERATIONS_EMPLOYEE")));
         assertTrue(loaded.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_COMPANY_SCOPE_COMPANY077")));
+
+        accounts.save(new BankAccount(new AccountNumber("6000000077"), Money.zero(),
+            "COMPANY077", AccountType.CHECKING, "COP"));
+        mvc.perform(get("/api/accounts/6000000077/balance")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("persisted-operator", "Persisted-Password-123")))
+            .andExpect(status().isOk());
     }
 
     @Test
