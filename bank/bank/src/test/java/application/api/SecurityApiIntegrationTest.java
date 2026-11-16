@@ -210,6 +210,14 @@ class SecurityApiIntegrationTest {
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isOk());
 
+        mvc.perform(get("/api/loans")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
+            .andExpect(status().isOk());
+
+        mvc.perform(get("/api/accounts")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
+            .andExpect(status().isOk());
+
         String unassignedLoanRequest = """
             {"id":"loan-unassigned-77","type":"PERSONAL","amount":1000,
              "termMonths":12,"destinationAccount":"7000000077","applicantId":"C001"}
