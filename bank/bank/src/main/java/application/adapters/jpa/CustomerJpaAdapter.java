@@ -15,5 +15,5 @@ public class CustomerJpaAdapter implements CustomerRepository {
  @Override public Optional<Customer> findByIdentification(String identification){return repository.findByIdentification(identification).map(this::toDomain);}
  @Override public Optional<Customer> findByEmail(String email){return repository.findByEmailIgnoreCase(email).map(this::toDomain);}
  @Override public Optional<Customer> findByPhone(String phone){return repository.findByPhone(phone).map(this::toDomain);}
- private Customer toDomain(CustomerEntity e){return new Customer(e.getId(),e.getName(),e.getIdentification(),new Email(e.getEmail()),e.getPhone()==null?null:new PhoneNumber(e.getPhone()),e.getAddress(),e.getBirthDate(),e.isActive());}
+ private Customer toDomain(CustomerEntity e){Customer c=new Customer(e.getId(),e.getName(),e.getIdentification(),new Email(e.getEmail()),e.getPhone()==null?null:new PhoneNumber(e.getPhone()),e.getAddress(),e.getBirthDate(),e.isActive());if(e.isBlocked())c.block();return c;}
 }
