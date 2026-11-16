@@ -39,6 +39,13 @@ public final class BankProduct {
     public String getDescription() { return description; }
     public BigDecimal getInterestRate() { return interestRate; }
     public boolean isRequiresApproval() { return requiresApproval; }
+    public String getCategory() {
+        return switch (type) {
+            case SAVINGS_ACCOUNT, CHECKING_ACCOUNT, PERSONAL_ACCOUNT, BUSINESS_ACCOUNT -> "ACCOUNTS";
+            case LOAN, CREDIT_CARD -> "LOANS";
+            case TERM_DEPOSIT -> "SERVICES";
+        };
+    }
     public boolean isActive() { return active; }
     public void deactivate() { active = false; }
 }
