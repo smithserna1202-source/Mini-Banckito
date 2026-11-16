@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -71,6 +72,7 @@ public class BankUserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+ @Transactional
     public UserResponse create(@Valid @RequestBody CreateUserRequest request,
                                Authentication authentication) {
         Role managingRole = AuthenticatedActor.role(authentication);
@@ -151,6 +153,7 @@ public class BankUserController {
     }
 
     @PostMapping("/{username}/deactivate")
+ @Transactional
     public UserResponse deactivate(@PathVariable String username, Authentication authentication) {
         Role managingRole = AuthenticatedActor.role(authentication);
         BankUserEntity user = users.findById(username)
@@ -174,6 +177,7 @@ public class BankUserController {
 
     @PostMapping("/{username}/customers/{customerId}")
     @ResponseStatus(HttpStatus.CREATED)
+ @Transactional
     public void assignCustomer(@PathVariable String username, @PathVariable String customerId,
                                Authentication authentication) {
         requireAdministrator(authentication);
