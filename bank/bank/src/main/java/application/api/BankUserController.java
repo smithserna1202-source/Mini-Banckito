@@ -16,6 +16,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Past;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -68,6 +69,23 @@ public class BankUserController {
                 user.getIdentification(), user.getEmailAddress(), user.getPhoneNumber(),
                 user.getBirthDate(), user.getAddress(), user.isEnabled());
         }
+    }
+
+    @GetMapping
+    public List<UserResponse> list(Authentication authentication) {
+        Role managingRole = AuthenticatedActor.role(authentication);
+        if (managingRole == Role.ADMINISTRATOR) {
+            return users.findAll().stream().map(UserResponse::from).toList();
+        }
+        if (managingRole == Role.COMPANY_CUSTOMER || managingRole == Role.COMPANY_SUPERVISOR) {
+            String companyId = AuthenticatedActor.companyId(authentication);
+            return users.findAll().stream()
+                .filter(user -> Role.COMPANY_OPERATIONS_EMPLOYEE.name().equals(user.getRole()))
+                .filter(user -> companyId.equals(user.getCompanyId()))
+                .map(UserResponse::from).toList();
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "Only administrators or company managers can list managed users");
     }
 
     @PostMapping
