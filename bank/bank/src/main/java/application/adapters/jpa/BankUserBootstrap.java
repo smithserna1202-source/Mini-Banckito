@@ -50,6 +50,9 @@ public class BankUserBootstrap implements ApplicationRunner {
             if (users.existsById(username)) {
                 BankUserEntity existing = users.findById(username).orElseThrow();
                 existing.completeMissingDemoProfile();
+                if ("natural-customer".equals(definition[0])) {
+                    existing.synchronizeDemoNaturalCustomerProfile();
+                }
                 users.save(existing);
                 continue;
             }
