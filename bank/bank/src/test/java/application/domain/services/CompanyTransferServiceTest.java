@@ -34,6 +34,10 @@ class CompanyTransferServiceTest {
             "COMPANY001", AccountType.CHECKING, "COP"));
         accounts.save(new BankAccount(new AccountNumber("4000000002"), Money.of("0.00"),
             "OTHER001", AccountType.CHECKING, "COP"));
+        accounts.save(new BankAccount(new AccountNumber("4000000003"), Money.of("10000000.00"),
+            "COMPANY002", AccountType.CHECKING, "COP"));
+        accounts.save(new BankAccount(new AccountNumber("4000000004"), Money.of("0.00"),
+            "OTHER002", AccountType.CHECKING, "COP"));
         service = new CompanyTransferService(accounts, transfers, new AuthorizationService(),
             new AuditService(auditEntries), Money.of("5000000.00"), transactionEntries);
     }
@@ -100,6 +104,18 @@ class CompanyTransferServiceTest {
             transfers.findById(transfer.getId()).orElseThrow().getStatus());
         assertEquals(Money.of("10000000.00"),
             accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
+    }
+
+    @Test
+    void pendingQueueIsFilteredByCompanyOwnership() {
+        service.create("COMPANY001", "4000000001", "4000000002",
+            Money.of("6000000.00"), "operator-1", Role.COMPANY_OPERATIONS_EMPLOYEE);
+        service.create("COMPANY002", "4000000003", "4000000004",
+            Money.of("7000000.00"), "operator-2", Role.COMPANY_OPERATIONS_EMPLOYEE);
+
+        assertEquals(1, service.findPendingForCompany("COMPANY001").size());
+        assertEquals(1, service.findPendingForCompany("COMPANY002").size());
+        assertEquals(2, service.findPendingForCompany(null).size());
     }
 
 }
