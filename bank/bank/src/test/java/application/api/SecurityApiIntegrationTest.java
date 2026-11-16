@@ -74,4 +74,20 @@ class SecurityApiIntegrationTest {
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void companyOperatorCanOnlyViewAccountsInTheirCompany() throws Exception {
+        accounts.save(new BankAccount(new AccountNumber("6000000003"), Money.zero(),
+            "COMPANY001", AccountType.CHECKING, "COP"));
+        accounts.save(new BankAccount(new AccountNumber("6000000004"), Money.zero(),
+            "COMPANY002", AccountType.CHECKING, "COP"));
+
+        mvc.perform(get("/api/accounts/6000000003/balance")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("company-operator", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+
+        mvc.perform(get("/api/accounts/6000000004/balance")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("company-operator", "Integration-Only-Password-123")))
+            .andExpect(status().isForbidden());
+    }
+
 }
