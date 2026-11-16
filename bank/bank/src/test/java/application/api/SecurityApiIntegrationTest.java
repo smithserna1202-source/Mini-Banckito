@@ -343,4 +343,29 @@ class SecurityApiIntegrationTest {
         assertTrue(products.findById("CREDIT_CARD").orElseThrow().isRequiresApproval());
     }
 
+    @Test
+    void blockedCustomerCannotOpenAccountUntilAdministratorUnblocksThem() throws Exception {
+        mvc.perform(post("/api/customers/C001/block")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+
+        String accountBody = """
+            {"accountNumber":"7000000090","ownerId":"C001",
+             "type":"SAVINGS","initialBalance":0,"currency":"COP"}
+            """;
+        mvc.perform(post("/api/accounts")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(accountBody))
+            .andExpect(status().isConflict());
+
+        mvc.perform(post("/api/customers/C001/unblock")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+
+        mvc.perform(post("/api/accounts")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(accountBody))
+            .andExpect(status().isOk());
+    }
+
 }
