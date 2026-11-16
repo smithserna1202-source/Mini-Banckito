@@ -1,4 +1,6 @@
 package application.domain.services;
+
+import application.domain.enums.AccountStatus;
 import application.domain.models.BankAccount;
 import application.domain.models.ScheduledTransfer;
 import application.domain.ports.BankAccountRepository;
@@ -7,24 +9,66 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
+
 public class ExecuteScheduledTransfersService {
- private final ScheduledTransferRepository transfers;private final BankAccountRepository accounts;private final AuditService audit;
- public ExecuteScheduledTransfersService(ScheduledTransferRepository transfers,BankAccountRepository accounts,AuditService audit){this.transfers=Objects.requireNonNull(transfers);this.accounts=Objects.requireNonNull(accounts);this.audit=Objects.requireNonNull(audit);}
- @Scheduled(fixedDelayString="${bank.transfers.scheduler-delay-ms:30000}")
- public void executeAllDue(){for(ScheduledTransfer t:transfers.findAll())executeDue(t);}
- public void executeDue(ScheduledTransfer transfer){
-  if(transfer.getStatus()!=ScheduledTransfer.Status.SCHEDULED||transfer.getScheduledAt().isAfter(Instant.now()))return;
-  try{
-   BankAccount from=accounts.findByAccountNumber(transfer.getSource().getValue()).orElseThrow(()->new IllegalArgumentException("Source account not found"));
-   BankAccount to=accounts.findByAccountNumber(transfer.getDestination().getValue()).orElseThrow(()->new IllegalArgumentException("Destination account not found"));
-   if(!from.getCurrency().equals(to.getCurrency()))throw new IllegalArgumentException("Account currencies must match");
-   from.withdraw(transfer.getAmount());
-   try{to.deposit(transfer.getAmount());}catch(RuntimeException ex){from.deposit(transfer.getAmount());throw ex;}
-   transfer.markExecuted();accounts.save(from);accounts.save(to);transfers.save(transfer);
-   audit.record("SCHEDULED_TRANSFER_EXECUTED",transfer.getCreatorId(),"SYSTEM",transfer.getId(),Map.of("amount",transfer.getAmount().toString()));
-  }catch(RuntimeException ex){
-   transfer.markFailed();transfers.save(transfer);
-   audit.record("SCHEDULED_TRANSFER_FAILED",transfer.getCreatorId(),"SYSTEM",transfer.getId(),Map.of("reason",ex.getMessage()==null?"Execution failed":ex.getMessage()));
-  }
- }
+    private final ScheduledTransferRepository transfers;
+    private final BankAccountRepository accounts;
+    private final AuditService audit;
+
+    public ExecuteScheduledTransfersService(ScheduledTransferRepository transfers, BankAccountRepository accounts,
+                                            AuditService audit) {
+        this.transfers = Objects.requireNonNull(transfers);
+        this.accounts = Objects.requireNonNull(accounts);
+        this.audit = Objects.requireNonNull(audit);
+    }
+
+    @Scheduled(fixedDelayString = "${bank.transfers.scheduler-delay-ms:30000}")
+    public void executeAllDue() {
+        for (ScheduledTransfer transfer : transfers.findAll()) {
+            executeDue(transfer.getId());
+        }
+    }
+
+    @Transactional
+    public void executeDue(String transferId) {
+        ScheduledTransfer transfer = transfers.findById(transferId)
+            .orElseThrow(() -> new IllegalArgumentException("Scheduled transfer not found"));
+        if (transfer.getStatus() != ScheduledTransfer.Status.SCHEDULED
+            || transfer.getScheduledAt().isAfter(Instant.now())) return;
+
+        BankAccount source = accounts.findByAccountNumber(transfer.getSource().getValue())
+            .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
+        BankAccount target = accounts.findByAccountNumber(transfer.getDestination().getValue())
+            .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
+
+        if (source.getStatus() != AccountStatus.ACTIVE || target.getStatus() != AccountStatus.ACTIVE) {
+            markFailed(transfer, "Both accounts must be active");
+            return;
+        }
+        if (!source.getCurrency().equals(target.getCurrency())) {
+            markFailed(transfer, "Account currencies must match");
+            return;
+        }
+
+        try {
+            source.withdraw(transfer.getAmount());
+            target.deposit(transfer.getAmount());
+            accounts.save(source);
+            accounts.save(target);
+            transfer.markExecuted();
+            transfers.save(transfer);
+            audit.record("SCHEDULED_TRANSFER_EXECUTED", transfer.getCreatorId(), "SYSTEM",
+                transfer.getId(), Map.of("amount", transfer.getAmount().toString()));
+        } catch (RuntimeException exception) {
+            markFailed(transfer, exception.getMessage() == null ? "Execution failed" : exception.getMessage());
+        }
+    }
+
+    private void markFailed(ScheduledTransfer transfer, String reason) {
+        transfer.markFailed();
+        transfers.save(transfer);
+        audit.record("SCHEDULED_TRANSFER_FAILED", transfer.getCreatorId(), "SYSTEM", transfer.getId(),
+            Map.of("reason", reason));
+    }
 }
