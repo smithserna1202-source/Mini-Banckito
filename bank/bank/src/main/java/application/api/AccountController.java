@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 @RestController @RequestMapping("/api/accounts")
 public class AccountController {
  private final BankAccountRepository accounts;private final CreateAccountService create;private final DepositService deposits;private final WithdrawalService withdrawals;private final GetAccountBalanceService balances;private final AuditService audit;private final AuthorizationService auth;private final TransactionRepository transactions;private final SpringDataCommercialCustomerAssignmentRepository assignments;
@@ -50,6 +51,7 @@ public class AccountController {
    "currency",a.getCurrency(),"status",a.getStatus().name(),
    "openedAt",a.getOpenedAt().toString())).toList();
  }
+ @Transactional
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateAccountRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);
   if(role==Role.COMMERCIAL_EMPLOYEE){
@@ -70,11 +72,13 @@ public class AccountController {
   } else if(!a.getOwnerId().equals(id))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You may only view your own account");
   return Map.of("accountNumber",number,"balance",balances.checkBalance(a).toString(),"currency",a.getCurrency(),"status",a.getStatus());
  }
+ @Transactional
  @PostMapping("/{number}/deposit") public Map<String,Object> deposit(@PathVariable String number,@Valid @RequestBody AmountRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);auth.require(role,AuthorizationService.Action.DEPOSIT);
   BankAccount a=find(number);Money amount=Money.of(r.amount().toPlainString());deposits.deposit(a,amount);accounts.save(a);transactions.save(new Transaction(UUID.randomUUID().toString(),number,amount,TransactionType.DEPOSIT));
   audit.record("DEPOSIT",AuthenticatedActor.id(actor),role.name(),number,Map.of("amount",r.amount().toPlainString()));return Map.of("balance",a.getBalance().toString());
  }
+ @Transactional
  @PostMapping("/{number}/withdraw") public Map<String,Object> withdraw(@PathVariable String number,@Valid @RequestBody AmountRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);auth.require(role,AuthorizationService.Action.WITHDRAW);
   BankAccount a=find(number);Money amount=Money.of(r.amount().toPlainString());withdrawals.withdraw(a,amount);accounts.save(a);transactions.save(new Transaction(UUID.randomUUID().toString(),number,amount,TransactionType.WITHDRAWAL));
