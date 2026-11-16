@@ -155,6 +155,12 @@ public class CompanyTransferService {
             .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
         BankAccount target = accounts.findByAccountNumber(transfer.getDestinationAccount())
             .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
+        if (source.getStatus() != AccountStatus.ACTIVE || target.getStatus() != AccountStatus.ACTIVE) {
+            throw new IllegalStateException("Both accounts must be active at execution time");
+        }
+        if (!source.getCurrency().equals(target.getCurrency())) {
+            throw new IllegalArgumentException("Account currencies must match");
+        }
         Money sourceBefore = source.getBalance();
         Money targetBefore = target.getBalance();
         source.withdraw(transfer.getAmount());
