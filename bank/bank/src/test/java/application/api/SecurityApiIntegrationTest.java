@@ -120,4 +120,29 @@ class SecurityApiIntegrationTest {
             () -> bankUserDetails.loadUserByUsername("disabled-user"));
     }
 
+    @Test
+    void onlyAdministratorCanCreateAndDeactivatePersistentUsers() throws Exception {
+        String body = """
+            {"username":"api-managed-teller","password":"New-Strong-Password-123",
+             "role":"TELLER","relatedEntityId":"TELLER-TEST","companyId":null}
+            """;
+
+        mvc.perform(post("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isCreated());
+
+        mvc.perform(post("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("C001", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/admin/users/api-managed-teller/deactivate")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+
+        assertThrows(UsernameNotFoundException.class,
+            () -> bankUserDetails.loadUserByUsername("api-managed-teller"));
+    }
+
 }
