@@ -8,12 +8,12 @@ Aplicación académica de gestión bancaria construida con Java 17, Spring Boot 
 - JDK 17
 - Maven 3.8+
 - Git
-- Docker Desktop con Docker Compose (recomendado para MySQL) o MySQL Server 8+
+- Docker Desktop con Docker Compose (recomendado para MySQL y MongoDB) o instalaciones locales de MySQL 8 y MongoDB 7+
 - Visual Studio Code y la extensión **Extension Pack for Java**
 
-## MySQL local
+## Bases de datos locales (MySQL y MongoDB)
 
-La aplicación usa MySQL 8 como base de datos relacional predeterminada. Desde la carpeta bank/bank:
+La aplicación usa MySQL 8 para los datos relacionales y MongoDB 7 para la bitácora de auditoría. Ambos servicios se inician con Docker Compose. Desde la carpeta bank/bank:
 
 1. Copia .env.example como .env y cambia las contraseñas de ejemplo.
 2. Inicia el servidor:
@@ -121,13 +121,13 @@ curl -u teller01:$BANK_DEFAULT_PASSWORD -X POST http://localhost:8080/api/accoun
 
 ## Persistencia y límites conocidos
 
-- El perfil predeterminado es sql: MySQL 8 guarda los registros relacionales. Hibernate crea/actualiza el esquema automáticamente (ddl-auto=update), por lo que se recomienda respaldar la base de datos antes de actualizar el proyecto.
-- Las solicitudes y decisiones de préstamos, cuentas, clientes, empresas, productos y transacciones se guardan en MySQL. Las transferencias internas/empresariales, transferencias programadas y bitácora todavía usan adaptadores en memoria; esos datos se pierden al reiniciar.
-- La bitácora es de solo anexado desde los servicios de dominio; la persistencia MongoDB requiere configurar y probar el perfil y el servidor Mongo.
-- El vencimiento de transferencias empresariales se revisa automáticamente cada minuto; las transferencias programadas se procesan cada 30 segundos.
+- Los perfiles predeterminados `sql,mongodb` activan MySQL 8 para clientes, empresas, cuentas, productos, préstamos, transferencias y movimientos; MongoDB 7 guarda la bitácora de auditoría mediante inserciones.
+- Hibernate crea/actualiza el esquema relacional automáticamente (`ddl-auto=update`); respalda la base de datos antes de actualizar el proyecto.
+- Las transferencias empresariales de alto valor requieren aprobación, y las transferencias pendientes vencen después de 60 minutos. Las transferencias programadas se procesan cada 30 segundos.
 - El servicio interbancario externo rechaza la operación porque no existe integración de liquidación con otra entidad.
 - El validador de límites existe en dominio, pero el acumulado diario aún no está conectado a un historial persistente.
-- Los usuarios/roles de demostración son precargados; falta gestión completa de credenciales, altas/bajas y asociación persistente entre empleados, clientes y empresas.
+- Los usuarios/roles de demostración se precargan en memoria; falta gestión completa de credenciales, altas/bajas y asociación persistente entre empleados, clientes y empresas.
+- La configuración de seguridad es demostrativa para uso académico, no apta para producción bancaria.
 
 ## Pruebas
 
