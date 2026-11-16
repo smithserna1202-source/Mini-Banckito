@@ -9,6 +9,8 @@ import application.domain.ports.BankAccountRepository;
 import application.domain.ports.LoanRepository;
 import application.domain.ports.CustomerRepository;
 import application.domain.ports.CompanyRepository;
+import application.domain.ports.BankProductRepository;
+import application.domain.enums.ProductType;
 import application.domain.valueobjects.Money;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -21,17 +23,25 @@ public class LoanService {
  private final AuditService audit;
  private final CustomerRepository customers;
  private final CompanyRepository companies;
+ private final BankProductRepository products;
  public LoanService(LoanRepository loans,BankAccountRepository accounts,AuthorizationService authorization,AuditService audit){
-  this(loans,accounts,authorization,audit,null,null);
+  this(loans,accounts,authorization,audit,null,null,null);
  }
  public LoanService(LoanRepository loans,BankAccountRepository accounts,AuthorizationService authorization,
                     AuditService audit,CustomerRepository customers,CompanyRepository companies){
+  this(loans,accounts,authorization,audit,customers,companies,null);
+ }
+ public LoanService(LoanRepository loans,BankAccountRepository accounts,AuthorizationService authorization,
+                    AuditService audit,CustomerRepository customers,CompanyRepository companies,
+                    BankProductRepository products){
   this.loans=Objects.requireNonNull(loans);this.accounts=Objects.requireNonNull(accounts);
   this.authorization=Objects.requireNonNull(authorization);this.audit=Objects.requireNonNull(audit);
-  this.customers=customers;this.companies=companies;
+  this.customers=customers;this.companies=companies;this.products=products;
  }
  public void request(Loan loan){
   Objects.requireNonNull(loan);
+  if(products!=null&&products.findAllActive().stream().noneMatch(p->p.getType()==ProductType.LOAN))
+   throw new IllegalStateException("Loan product is not available in the active product catalog");
   if(customers!=null&&companies!=null){
    boolean activeCustomer=customers.findById(loan.getApplicantId())
     .filter(application.domain.models.Customer::isActive).isPresent();
