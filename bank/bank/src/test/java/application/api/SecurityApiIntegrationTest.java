@@ -19,6 +19,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import application.adapters.jpa.BankUserEntity;
+import application.adapters.jpa.SpringDataBankUserRepository;
+import application.adapters.jpa.JpaBankUserDetailsService;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -32,6 +37,9 @@ class SecurityApiIntegrationTest {
     @Autowired private MockMvc mvc;
     @Autowired private BankAccountRepository accounts;
     @Autowired private AuditLogRepository audit;
+    @Autowired private SpringDataBankUserRepository bankUsers;
+    @Autowired private JpaBankUserDetailsService bankUserDetails;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @Test
     void healthEndpointIsPublic() throws Exception {
@@ -88,6 +96,28 @@ class SecurityApiIntegrationTest {
         mvc.perform(get("/api/accounts/6000000004/balance")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("company-operator", "Integration-Only-Password-123")))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void credentialsAndCompanyRoleAreLoadedFromPersistentUserRepository() {
+        bankUsers.save(new BankUserEntity("persisted-operator",
+            passwordEncoder.encode("Persisted-Password-123"), "COMPANY_OPERATIONS_EMPLOYEE",
+            "COMPANY077", "COMPANY077", true));
+
+        var loaded = bankUserDetails.loadUserByUsername("persisted-operator");
+        assertTrue(loaded.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_COMPANY_OPERATIONS_EMPLOYEE")));
+        assertTrue(loaded.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_COMPANY_SCOPE_COMPANY077")));
+    }
+
+    @Test
+    void disabledPersistentUserCannotAuthenticate() {
+        bankUsers.save(new BankUserEntity("disabled-user",
+            passwordEncoder.encode("Disabled-Password-123"), "TELLER", "teller-disabled", null, false));
+
+        assertThrows(UsernameNotFoundException.class,
+            () -> bankUserDetails.loadUserByUsername("disabled-user"));
     }
 
 }
