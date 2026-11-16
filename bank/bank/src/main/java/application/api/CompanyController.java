@@ -29,7 +29,7 @@ public class CompanyController {
  }
  @GetMapping("/{id}") public Map<String,Object> get(@PathVariable String id,Authentication actor){
   Role role=AuthenticatedActor.role(actor);
-  if(role!=Role.ADMINISTRATOR){
+  if(role!=Role.ADMINISTRATOR&&role!=Role.INTERNAL_ANALYST){
    if(role!=Role.COMPANY_CUSTOMER&&role!=Role.COMPANY_OPERATIONS_EMPLOYEE&&role!=Role.COMPANY_SUPERVISOR)
     throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Company access denied");
    if(!id.equals(AuthenticatedActor.companyId(actor)))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Company access denied");
