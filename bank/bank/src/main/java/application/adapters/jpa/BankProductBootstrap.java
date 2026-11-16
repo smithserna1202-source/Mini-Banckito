@@ -22,11 +22,11 @@ public class BankProductBootstrap implements ApplicationRunner {
         new BankProduct("ACCOUNT_BUSINESS", "Cuenta empresarial", ProductType.BUSINESS_ACCOUNT,
             "Cuenta para clientes empresa", null),
         new BankProduct("LOAN_PERSONAL", "Crédito personal", ProductType.LOAN,
-            "Producto de préstamo personal", null),
+            "Producto de préstamo personal", null, true),
         new BankProduct("TERM_DEPOSIT", "Depósito a término", ProductType.TERM_DEPOSIT,
             "Producto de ahorro a término", null),
         new BankProduct("CREDIT_CARD", "Tarjeta de crédito", ProductType.CREDIT_CARD,
-            "Producto de crédito", null)
+            "Producto de crédito", null, true)
     );
 
     private final SpringDataBankProductRepository products;
