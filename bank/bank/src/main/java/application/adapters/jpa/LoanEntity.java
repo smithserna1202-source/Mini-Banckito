@@ -23,4 +23,5 @@ public class LoanEntity {
  public String getId(){return id;} public String getApplicantId(){return applicantId;} public String getLoanType(){return loanType;}
  public BigDecimal getRequestedAmount(){return requestedAmount;} public int getTermMonths(){return termMonths;} public String getDestinationAccount(){return destinationAccount;}
  public LoanStatus getStatus(){return status;} public BigDecimal getApprovedAmount(){return approvedAmount;} public BigDecimal getInterestRate(){return interestRate;}
+ public Instant getRequestedAt(){return requestedAt;} public Instant getApprovedAt(){return approvedAt;} public Instant getDisbursedAt(){return disbursedAt;}
 }
