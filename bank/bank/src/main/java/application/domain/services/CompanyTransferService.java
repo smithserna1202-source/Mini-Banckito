@@ -89,6 +89,8 @@ public class CompanyTransferService {
         }
         transfer.approve(supervisorId);
         transfers.save(transfer);
+        audit.record("TRANSFER_APPROVED", supervisorId, role.name(), transfer.getId(),
+            Map.of("createdBy", transfer.getCreatorUserId(), "approvedAt", transfer.getApprovedAt().toString()));
         execute(transfer);
     }
 
@@ -116,7 +118,10 @@ public class CompanyTransferService {
             transfer.expire();
             if (before != transfer.getStatus()) {
                 transfers.save(transfer);
-                audit.record("TRANSFER_EXPIRED", "SYSTEM", "SYSTEM", transfer.getId(), Map.of());
+                audit.record("TRANSFER_EXPIRED", "SYSTEM", "SYSTEM", transfer.getId(),
+                    Map.of("reason", "vencida por falta de aprobación en el tiempo establecido",
+                        "createdAt", transfer.getCreatedAt().toString(),
+                        "creatorUserId", transfer.getCreatorUserId()));
             }
         });
     }
