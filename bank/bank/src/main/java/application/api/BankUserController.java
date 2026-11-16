@@ -1,6 +1,8 @@
 package application.api;
 
 import application.adapters.jpa.BankUserEntity;
+import application.adapters.jpa.CommercialCustomerAssignmentEntity;
+import application.adapters.jpa.SpringDataCommercialCustomerAssignmentRepository;
 import application.adapters.jpa.SpringDataBankUserRepository;
 import application.domain.enums.Role;
 import application.domain.ports.CompanyRepository;
@@ -22,13 +24,16 @@ public class BankUserController {
     private final PasswordEncoder passwords;
     private final CustomerRepository customers;
     private final CompanyRepository companies;
+    private final SpringDataCommercialCustomerAssignmentRepository assignments;
 
     public BankUserController(SpringDataBankUserRepository users, PasswordEncoder passwords,
-                              CustomerRepository customers, CompanyRepository companies) {
+                              CustomerRepository customers, CompanyRepository companies,
+                              SpringDataCommercialCustomerAssignmentRepository assignments) {
         this.users = users;
         this.passwords = passwords;
         this.customers = customers;
         this.companies = companies;
+        this.assignments = assignments;
     }
 
     public record CreateUserRequest(
@@ -93,6 +98,26 @@ public class BankUserController {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         user.deactivate();
         return UserResponse.from(users.save(user));
+    }
+
+
+    @PostMapping("/{username}/customers/{customerId}")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void assignCustomer(@PathVariable String username, @PathVariable String customerId,
+                               Authentication authentication) {
+        requireAdministrator(authentication);
+        BankUserEntity employee = users.findById(username)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (!Role.COMMERCIAL_EMPLOYEE.name().equals(employee.getRole()) || !employee.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Only active commercial employees can be assigned customers");
+        }
+        customers.findById(customerId).filter(c -> c.isActive())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Active customer not found"));
+        if (assignments.findByEmployeeUsernameAndCustomerIdAndActiveTrue(username, customerId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer is already assigned to this employee");
+        }
+        assignments.save(new CommercialCustomerAssignmentEntity(username, customerId));
     }
 
     private static void requireAdministrator(Authentication authentication) {
