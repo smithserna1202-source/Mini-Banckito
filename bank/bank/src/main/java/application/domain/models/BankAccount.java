@@ -11,10 +11,19 @@ public class BankAccount {
  private final Instant openedAt;
  public BankAccount(AccountNumber number,Money initialBalance){this(number,initialBalance,"UNASSIGNED",AccountType.SAVINGS,"COP");}
  public BankAccount(AccountNumber number,Money initialBalance,String ownerId,AccountType type,String currency){
-  this.accountNumber=Objects.requireNonNull(number);this.balance=Objects.requireNonNull(initialBalance);
+  this(number,initialBalance,ownerId,type,currency,AccountStatus.ACTIVE,Instant.now());
+ }
+ private BankAccount(AccountNumber number,Money balance,String ownerId,AccountType type,String currency,
+                     AccountStatus status,Instant openedAt){
+  this.accountNumber=Objects.requireNonNull(number);this.balance=Objects.requireNonNull(balance);
   if(ownerId==null||ownerId.isBlank())throw new IllegalArgumentException("Account owner is required");
   if(currency==null||!currency.matches("[A-Z]{3}"))throw new IllegalArgumentException("Currency must be a 3-letter ISO code");
-  this.ownerId=ownerId;this.type=Objects.requireNonNull(type);this.currency=currency;this.status=AccountStatus.ACTIVE;this.openedAt=Instant.now();
+  this.ownerId=ownerId;this.type=Objects.requireNonNull(type);this.currency=currency;
+  this.status=Objects.requireNonNull(status);this.openedAt=Objects.requireNonNull(openedAt);
+ }
+ public static BankAccount restore(AccountNumber number,Money balance,String ownerId,AccountType type,
+                                   String currency,AccountStatus status,Instant openedAt){
+  return new BankAccount(number,balance,ownerId,type,currency,status,openedAt);
  }
  public AccountNumber getAccountNumber(){return accountNumber;} public Money getBalance(){return balance;}
  public String getOwnerId(){return ownerId;} public AccountType getType(){return type;} public String getCurrency(){return currency;}
