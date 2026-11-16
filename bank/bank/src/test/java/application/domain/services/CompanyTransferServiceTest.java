@@ -8,6 +8,8 @@ import application.adapters.InMemoryBankTransferRepository;
 import application.domain.enums.AccountType;
 import application.domain.enums.Role;
 import application.domain.enums.TransferStatus;
+import application.domain.enums.TransactionType;
+import application.adapters.InMemoryTransactionRepository;
 import application.domain.models.BankAccount;
 import application.domain.models.BankTransfer;
 import application.domain.valueobjects.AccountNumber;
@@ -19,6 +21,7 @@ class CompanyTransferServiceTest {
     private InMemoryBankAccountRepository accounts;
     private InMemoryBankTransferRepository transfers;
     private InMemoryAuditLogRepository auditEntries;
+    private InMemoryTransactionRepository transactionEntries;
     private CompanyTransferService service;
 
     @BeforeEach
@@ -26,12 +29,13 @@ class CompanyTransferServiceTest {
         accounts = new InMemoryBankAccountRepository();
         transfers = new InMemoryBankTransferRepository();
         auditEntries = new InMemoryAuditLogRepository();
+        transactionEntries = new InMemoryTransactionRepository();
         accounts.save(new BankAccount(new AccountNumber("4000000001"), Money.of("10000000.00"),
             "COMPANY001", AccountType.CHECKING, "COP"));
         accounts.save(new BankAccount(new AccountNumber("4000000002"), Money.of("0.00"),
             "OTHER001", AccountType.CHECKING, "COP"));
         service = new CompanyTransferService(accounts, transfers, new AuthorizationService(),
-            new AuditService(auditEntries), Money.of("5000000.00"));
+            new AuditService(auditEntries), Money.of("5000000.00"), transactionEntries);
     }
 
     @Test
@@ -43,6 +47,9 @@ class CompanyTransferServiceTest {
         assertEquals(Money.of("9900000.00"), accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
         assertEquals(Money.of("100000.00"), accounts.findByAccountNumber("4000000002").orElseThrow().getBalance());
         assertEquals(1, auditEntries.findAll().size());
+        assertEquals(1, transactionEntries.findByAccountId("4000000001").size());
+        assertEquals(TransactionType.DEBIT_TRANSFER, transactionEntries.findByAccountId("4000000001").get(0).getType());
+        assertEquals(TransactionType.CREDIT_TRANSFER, transactionEntries.findByAccountId("4000000002").get(0).getType());
     }
 
     @Test
@@ -60,6 +67,8 @@ class CompanyTransferServiceTest {
         assertEquals(Money.of("4000000.00"), accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
         assertEquals(Money.of("6000000.00"), accounts.findByAccountNumber("4000000002").orElseThrow().getBalance());
         assertEquals(2, auditEntries.findAll().size());
+        assertEquals(TransactionType.DEBIT_TRANSFER, transactionEntries.findByAccountId("4000000001").get(0).getType());
+        assertEquals(TransactionType.CREDIT_TRANSFER, transactionEntries.findByAccountId("4000000002").get(0).getType());
     }
 
     @Test
