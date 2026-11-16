@@ -4,4 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SpringDataCustomerRepository extends JpaRepository<CustomerEntity,String> {
  Optional<CustomerEntity> findByIdentification(String identification);
  Optional<CustomerEntity> findByEmailIgnoreCase(String email);
+ Optional<CustomerEntity> findByPhone(String phone);
 }
