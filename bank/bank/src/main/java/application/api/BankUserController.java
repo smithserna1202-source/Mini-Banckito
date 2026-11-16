@@ -100,6 +100,10 @@ public class BankUserController {
         Role role = request.role();
         String companyId = request.companyId();
         if (role == Role.NATURAL_PERSON_CUSTOMER) {
+            if (!request.username().equals(request.relatedEntityId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Natural-person username must match the linked customer identifier");
+            }
             if (companyId != null && !companyId.isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Natural customers cannot have a company scope");
             }
