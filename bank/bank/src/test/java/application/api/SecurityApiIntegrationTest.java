@@ -293,6 +293,22 @@ class SecurityApiIntegrationTest {
         mvc.perform(get("/api/customers/TELLER-CUSTOMER-77")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123")))
             .andExpect(status().isOk());
+
+        String userBody = """
+            {"username":"TELLER-CUSTOMER-77","password":"New-Customer-Password-123",
+             "role":"NATURAL_PERSON_CUSTOMER","relatedEntityId":"TELLER-CUSTOMER-77","companyId":null,
+             "fullName":"New Bank Customer","identification":"ID-TELLER-CUSTOMER-77",
+             "email":"newcustomer77@example.test","phone":"3001234590",
+             "birthDate":"1990-01-01","address":"Customer address"}
+            """;
+        mvc.perform(post("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(userBody))
+            .andExpect(status().isCreated());
+
+        mvc.perform(get("/api/accounts/7000000079/balance")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("TELLER-CUSTOMER-77", "New-Customer-Password-123")))
+            .andExpect(status().isOk());
     }
 
     @Test
