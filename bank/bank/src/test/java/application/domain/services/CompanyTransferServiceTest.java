@@ -147,4 +147,15 @@ class CompanyTransferServiceTest {
             accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
     }
 
+    @Test
+    void companyAdministratorCanApproveHighValueTransferForItsCompany() {
+        BankTransfer transfer = service.create("COMPANY001", "4000000001", "4000000002",
+            Money.of("6000000.00"), "company-operator", Role.COMPANY_OPERATIONS_EMPLOYEE);
+
+        service.approve(transfer.getId(), "COMPANY001", Role.COMPANY_CUSTOMER, "COMPANY001");
+
+        assertEquals(TransferStatus.EXECUTED, transfers.findById(transfer.getId()).orElseThrow().getStatus());
+        assertEquals(Money.of("4000000.00"), accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
+    }
+
 }
