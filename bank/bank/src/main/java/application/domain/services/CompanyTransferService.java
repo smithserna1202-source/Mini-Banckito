@@ -12,6 +12,8 @@ import application.domain.models.Transaction;
 import application.domain.enums.TransactionType;
 import application.domain.valueobjects.Money;
 import java.util.Map;
+import java.util.List;
+import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -55,6 +57,54 @@ public class CompanyTransferService {
                 return source != null && companyId.equals(source.getOwnerId());
             })
             .toList();
+    }
+
+    public record PaymentInstruction(String destinationAccount, Money amount) {
+        public PaymentInstruction {
+            if (destinationAccount == null || destinationAccount.isBlank()
+                    || amount == null || !amount.isPositive()) {
+                throw new IllegalArgumentException("Each batch payment requires a destination and positive amount");
+            }
+        }
+    }
+
+    @Transactional
+    public List<BankTransfer> createBatch(String companyId, String sourceId,
+            List<PaymentInstruction> payments, String userId, Role role) {
+        if (payments == null || payments.isEmpty() || payments.size() > 100) {
+            throw new IllegalArgumentException("A batch must contain between 1 and 100 payments");
+        }
+        authorization.require(role, AuthorizationService.Action.REQUEST_TRANSFER);
+        BankAccount source = accounts.findByAccountNumber(sourceId)
+            .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
+        if (role != Role.ADMINISTRATOR && !source.getOwnerId().equals(companyId)) {
+            throw new SecurityException("Employee cannot operate on another company account");
+        }
+        if (source.getStatus() != AccountStatus.ACTIVE) {
+            throw new IllegalStateException("Source account is not active");
+        }
+
+        BigDecimal immediateTotal = BigDecimal.ZERO;
+        for (PaymentInstruction payment : payments) {
+            BankAccount destination = accounts.findByAccountNumber(payment.destinationAccount())
+                .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
+            if (destination.getStatus() != AccountStatus.ACTIVE
+                    || !source.getCurrency().equals(destination.getCurrency())) {
+                throw new IllegalStateException("All destination accounts must be active and use the source currency");
+            }
+            if (payment.destinationAccount().equals(sourceId)) {
+                throw new IllegalArgumentException("Source and destination accounts must differ");
+            }
+            if (!payment.amount().isGreaterThan(approvalThreshold)) {
+                immediateTotal = immediateTotal.add(payment.amount().getAmountDecimal());
+            }
+        }
+        if (immediateTotal.compareTo(source.getBalance().getAmountDecimal()) > 0) {
+            throw new IllegalStateException("Insufficient funds for immediate payments in batch");
+        }
+
+        return payments.stream().map(payment -> create(companyId, sourceId,
+            payment.destinationAccount(), payment.amount(), userId, role)).toList();
     }
 
     @Transactional
