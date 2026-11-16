@@ -10,4 +10,5 @@ public class InMemoryCustomerRepository implements CustomerRepository {
  @Override public Optional<Customer> findById(String id){return Optional.ofNullable(customers.get(id));}
  @Override public Optional<Customer> findByIdentification(String identification){return customers.values().stream().filter(c->c.getIdentification().equals(identification)).findFirst();}
  @Override public Optional<Customer> findByEmail(String email){return customers.values().stream().filter(c->c.getEmail().getValue().equalsIgnoreCase(email)).findFirst();}
+ @Override public Optional<Customer> findByPhone(String phone){return customers.values().stream().filter(c->c.getPhone()!=null&&c.getPhone().getNumber().equals(phone)).findFirst();}
 }
