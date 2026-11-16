@@ -1,5 +1,6 @@
 package application.api;
 import application.domain.enums.Role;
+import application.adapters.jpa.SpringDataCommercialCustomerAssignmentRepository;
 import application.domain.models.Customer;
 import application.domain.ports.CustomerRepository;
 import application.domain.ports.CompanyRepository;
@@ -15,8 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 @RestController @RequestMapping("/api/customers")
 public class CustomerController {
- private final CustomerRepository customers;private final CompanyRepository companies;private final AuditService audit;
- public CustomerController(CustomerRepository c,CompanyRepository companies,AuditService a){customers=c;this.companies=companies;audit=a;}
+ private final CustomerRepository customers;private final CompanyRepository companies;private final AuditService audit;private final SpringDataCommercialCustomerAssignmentRepository assignments;
+ public CustomerController(CustomerRepository c,CompanyRepository companies,AuditService a,SpringDataCommercialCustomerAssignmentRepository assignments){customers=c;this.companies=companies;audit=a;this.assignments=assignments;}
  public record CreateCustomerRequest(@NotBlank String name,@NotBlank String identification,@jakarta.validation.constraints.Email String email,@Pattern(regexp="\\d{7,15}") String phone,@NotNull LocalDate birthDate,String address){}
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateCustomerRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);if(role!=Role.ADMINISTRATOR&&role!=Role.NATURAL_PERSON_CUSTOMER)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Role cannot register a natural-person customer");
@@ -31,7 +32,11 @@ public class CustomerController {
  }
  @GetMapping("/{id}") public Map<String,Object> get(@PathVariable String id,Authentication actor){
   Role role=AuthenticatedActor.role(actor);String requester=AuthenticatedActor.id(actor);
-  if(!requester.equals(id)&&role!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Customer is not assigned to this user");
+  if(!requester.equals(id)&&role!=Role.ADMINISTRATOR){
+   boolean assigned=role==Role.COMMERCIAL_EMPLOYEE
+    &&assignments.findByEmployeeUsernameAndCustomerIdAndActiveTrue(requester,id).isPresent();
+   if(!assigned)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Customer is not assigned to this user");
+  }
   Customer c=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
   return Map.of("id",c.getId(),"name",c.getName(),"email",c.getEmail().getValue(),"identification",c.getIdentification(),"active",c.isActive());
  }
