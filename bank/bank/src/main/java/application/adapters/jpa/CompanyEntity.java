@@ -11,7 +11,7 @@ public class CompanyEntity {
  private String address;
  @Column(nullable=false) private String legalRepresentativeId;
  @Column(nullable=false) private boolean active;
- @Column(nullable=false) private boolean blocked;
+ @Column(nullable=false, columnDefinition="boolean default false") private boolean blocked;
  protected CompanyEntity(){}
  public CompanyEntity(Company c){id=c.getId();legalName=c.getLegalName();nit=c.getNit();email=c.getEmail().getValue();phone=c.getPhone()==null?null:c.getPhone().getNumber();address=c.getAddress();legalRepresentativeId=c.getLegalRepresentativeId();active=c.isActiveFlag();blocked=c.isBlocked();}
  public String getId(){return id;} public String getLegalName(){return legalName;} public String getNit(){return nit;} public String getEmail(){return email;}
