@@ -56,7 +56,20 @@ public class BankUserController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse create(@Valid @RequestBody CreateUserRequest request,
                                Authentication authentication) {
-        requireAdministrator(authentication);
+        Role managingRole = AuthenticatedActor.role(authentication);
+        boolean bankAdministrator = managingRole == Role.ADMINISTRATOR;
+        if (!bankAdministrator) {
+            if (managingRole != Role.COMPANY_CUSTOMER && managingRole != Role.COMPANY_SUPERVISOR) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only administrators or company managers can create users");
+            }
+            String managerCompany = AuthenticatedActor.companyId(authentication);
+            if (request.role() != Role.COMPANY_OPERATIONS_EMPLOYEE
+                    || !managerCompany.equals(request.companyId())
+                    || !managerCompany.equals(request.relatedEntityId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Company managers may create operational users only within their own company");
+            }
+        }
         if (users.existsById(request.username())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
         }
@@ -93,9 +106,18 @@ public class BankUserController {
 
     @PostMapping("/{username}/deactivate")
     public UserResponse deactivate(@PathVariable String username, Authentication authentication) {
-        requireAdministrator(authentication);
+        Role managingRole = AuthenticatedActor.role(authentication);
         BankUserEntity user = users.findById(username)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (managingRole != Role.ADMINISTRATOR) {
+            boolean companyManager = managingRole == Role.COMPANY_CUSTOMER || managingRole == Role.COMPANY_SUPERVISOR;
+            String companyId = companyManager ? AuthenticatedActor.companyId(authentication) : null;
+            if (!companyManager || !Role.COMPANY_OPERATIONS_EMPLOYEE.name().equals(user.getRole())
+                    || !companyId.equals(user.getCompanyId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Company managers may deactivate only operational users of their own company");
+            }
+        }
         user.deactivate();
         return UserResponse.from(users.save(user));
     }
