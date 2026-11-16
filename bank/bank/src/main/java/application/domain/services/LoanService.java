@@ -15,6 +15,7 @@ import application.domain.valueobjects.Money;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.transaction.annotation.Transactional;
 
 public class LoanService {
  private final LoanRepository loans;
@@ -38,6 +39,7 @@ public class LoanService {
   this.authorization=Objects.requireNonNull(authorization);this.audit=Objects.requireNonNull(audit);
   this.customers=customers;this.companies=companies;this.products=products;
  }
+ @Transactional
  public void request(Loan loan){
   Objects.requireNonNull(loan);
   if(products!=null&&products.findAllActive().stream().noneMatch(p->p.getType()==ProductType.LOAN&&p.isRequiresApproval()))
@@ -57,6 +59,7 @@ public class LoanService {
   loans.save(loan);
   audit.record("LOAN_REQUESTED",loan.getApplicantId(),"CUSTOMER",loan.getId(),Map.of("amount",loan.getRequestedAmount().toString()));
  }
+ @Transactional
  public void approve(String loanId,String analystId,Role role,Money amount,BigDecimal rate){
   if(role!=Role.INTERNAL_ANALYST)throw new SecurityException("Only an internal analyst may approve loans");
   authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
@@ -64,12 +67,14 @@ public class LoanService {
   loan.approve(analystId,amount,rate);loans.save(loan);
   audit.record("LOAN_APPROVED",analystId,role.name(),loanId,Map.of("amount",amount.toString(),"rate",rate.toPlainString()));
  }
+ @Transactional
  public void reject(String loanId,String analystId,Role role){
   if(role!=Role.INTERNAL_ANALYST)throw new SecurityException("Only an internal analyst may reject loans");
   authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
   loan.reject(analystId);loans.save(loan);audit.record("LOAN_REJECTED",analystId,role.name(),loanId,Map.of());
  }
+ @Transactional
  public void disburse(String loanId,String analystId,Role role){
   if(role!=Role.INTERNAL_ANALYST)throw new SecurityException("Only an internal analyst may disburse loans");
   authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
