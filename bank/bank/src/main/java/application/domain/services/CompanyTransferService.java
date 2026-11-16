@@ -84,7 +84,10 @@ public class CompanyTransferService {
         transfer.expire();
         if (transfer.getStatus() == TransferStatus.EXPIRED) {
             transfers.save(transfer);
-            audit.record("TRANSFER_EXPIRED", supervisorId, role.name(), id, Map.of());
+            audit.record("TRANSFER_EXPIRED", supervisorId, role.name(), id,
+                Map.of("reason", "vencida por falta de aprobación en el tiempo establecido",
+                    "createdAt", transfer.getCreatedAt().toString(),
+                    "creatorUserId", transfer.getCreatorUserId()));
             return;
         }
         transfer.approve(supervisorId);
