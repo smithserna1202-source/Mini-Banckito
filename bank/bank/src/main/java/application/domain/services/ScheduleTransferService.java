@@ -27,11 +27,16 @@ public class ScheduleTransferService {
     @Transactional
     public ScheduledTransfer schedule(String source, String destination, Money amount, Instant at,
                                       String creatorId, String role) {
+        return schedule(source, destination, amount, at, creatorId, creatorId, role);
+    }
+
+    public ScheduledTransfer schedule(String source, String destination, Money amount, Instant at,
+                                      String ownerId, String creatorId, String role) {
         BankAccount from = accounts.findByAccountNumber(source)
             .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
         BankAccount to = accounts.findByAccountNumber(destination)
             .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
-        if (!from.getOwnerId().equals(creatorId)) {
+        if (!from.getOwnerId().equals(ownerId)) {
             throw new SecurityException("Only the owner may schedule a transfer");
         }
         if (!from.getCurrency().equals(to.getCurrency())) {
