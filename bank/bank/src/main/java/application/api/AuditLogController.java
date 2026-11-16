@@ -1,18 +1,69 @@
 package application.api;
+
 import application.domain.enums.Role;
+import application.domain.models.BankAccount;
+import application.domain.models.Loan;
 import application.domain.ports.AuditLogRepository;
+import application.domain.ports.BankAccountRepository;
+import application.domain.ports.LoanRepository;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-@RestController @RequestMapping("/api/audit")
+
+@RestController
+@RequestMapping("/api/audit")
 public class AuditLogController {
- private final AuditLogRepository audit;
- public AuditLogController(AuditLogRepository audit){this.audit=audit;}
- @GetMapping public Object list(Authentication actor){
-  Role role=AuthenticatedActor.role(actor);
-  if(role!=Role.INTERNAL_ANALYST&&role!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Audit access denied");
-  return audit.findAll().stream().map(e->Map.of("id",e.getId(),"operation",e.getOperationType(),"occurredAt",e.getOccurredAt().toString(),"userId",e.getUserId(),"role",e.getRole(),"productId",e.getAffectedProductId()==null?"":e.getAffectedProductId(),"details",e.getDetails())).toList();
- }
+    private final AuditLogRepository audit;
+    private final BankAccountRepository accounts;
+    private final LoanRepository loans;
+
+    public AuditLogController(AuditLogRepository audit, BankAccountRepository accounts, LoanRepository loans) {
+        this.audit = audit;
+        this.accounts = accounts;
+        this.loans = loans;
+    }
+
+    @GetMapping
+    public Object list(Authentication actor) {
+        Role role = AuthenticatedActor.role(actor);
+        if (role != Role.INTERNAL_ANALYST && role != Role.ADMINISTRATOR) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Audit access denied");
+        }
+        return audit.findAll().stream().map(this::toResponse).toList();
+    }
+
+    @GetMapping("/product/{productId}")
+    public Object productHistory(@PathVariable String productId, Authentication actor) {
+        Role role = AuthenticatedActor.role(actor);
+        if (role != Role.NATURAL_PERSON_CUSTOMER && role != Role.COMPANY_CUSTOMER) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Customer product history only");
+        }
+        String requester = AuthenticatedActor.id(actor);
+        boolean ownsProduct = accounts.findByAccountNumber(productId)
+            .map(account -> account.getOwnerId().equals(requester))
+            .orElseGet(() -> loans.findById(productId)
+                .map(loan -> loan.getApplicantId().equals(requester))
+                .orElse(false));
+        if (!ownsProduct) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
+        }
+        return audit.findAll().stream()
+            .filter(entry -> productId.equals(entry.getAffectedProductId()))
+            .map(this::toResponse)
+            .toList();
+    }
+
+    private Map<String, Object> toResponse(application.domain.models.AuditLogEntry entry) {
+        return Map.of(
+            "id", entry.getId(),
+            "operation", entry.getOperationType(),
+            "occurredAt", entry.getOccurredAt().toString(),
+            "userId", entry.getUserId(),
+            "role", entry.getRole(),
+            "productId", entry.getAffectedProductId() == null ? "" : entry.getAffectedProductId(),
+            "details", entry.getDetails()
+        );
+    }
 }
