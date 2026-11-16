@@ -130,10 +130,12 @@ public class CompanyTransferService {
             destinationId, amount, userId, approval);
         transfers.save(transfer);
         if (!approval) {
-            execute(transfer);
+            execute(transfer,userId,role.name());
         } else {
             audit.record("TRANSFER_PENDING_APPROVAL", userId, role.name(), transfer.getId(),
-                Map.of("amount", amount.toString()));
+                Map.of("amount", amount.toString(),"previousStatus","NONE",
+                    "newStatus",transfer.getStatus().name(),"createdAt",transfer.getCreatedAt().toString(),
+                    "sourceAccount",sourceId,"destinationAccount",destinationId));
         }
         return transfer;
     }
@@ -143,11 +145,14 @@ public class CompanyTransferService {
         authorization.require(role, AuthorizationService.Action.APPROVE_HIGH_VALUE_TRANSFER);
         BankTransfer transfer = require(id);
         requireCompanyScope(transfer, role, companyId);
+        TransferStatus previousStatus=transfer.getStatus();
         transfer.expire();
         if (transfer.getStatus() == TransferStatus.EXPIRED) {
             transfers.save(transfer);
             audit.record("TRANSFER_EXPIRED", supervisorId, role.name(), id,
-                Map.of("reason", "vencida por falta de aprobación en el tiempo establecido",
+                Map.of("previousStatus",previousStatus.name(),"newStatus",transfer.getStatus().name(),
+                    "expiredAt",java.time.Instant.now().toString(),
+                    "reason", "vencida por falta de aprobación en el tiempo establecido",
                     "createdAt", transfer.getCreatedAt().toString(),
                     "creatorUserId", transfer.getCreatorUserId()));
             return;
@@ -160,11 +165,14 @@ public class CompanyTransferService {
         if (source.getBalance().getAmountDecimal().compareTo(transfer.getAmount().getAmountDecimal()) < 0) {
             throw new IllegalStateException("Insufficient funds for company transfer approval");
         }
+        TransferStatus previousStatus=transfer.getStatus();
         transfer.approve(supervisorId);
         transfers.save(transfer);
+        execute(transfer,supervisorId,role.name());
         audit.record("TRANSFER_APPROVED", supervisorId, role.name(), transfer.getId(),
-            Map.of("createdBy", transfer.getCreatorUserId(), "approvedAt", transfer.getApprovedAt().toString()));
-        execute(transfer);
+            Map.of("previousStatus",previousStatus.name(),"newStatus",transfer.getStatus().name(),
+                "createdBy",transfer.getCreatorUserId(),"approvedBy",transfer.getApproverUserId(),
+                "approvedAt",transfer.getApprovedAt().toString()));
     }
 
     @Transactional
@@ -172,15 +180,21 @@ public class CompanyTransferService {
         authorization.require(role, AuthorizationService.Action.APPROVE_HIGH_VALUE_TRANSFER);
         BankTransfer transfer = require(id);
         requireCompanyScope(transfer, role, companyId);
+        TransferStatus previousStatus=transfer.getStatus();
         transfer.expire();
         if (transfer.getStatus() == TransferStatus.EXPIRED) {
             transfers.save(transfer);
-            audit.record("TRANSFER_EXPIRED", supervisorId, role.name(), id, Map.of());
+            audit.record("TRANSFER_EXPIRED", supervisorId, role.name(), id,
+                Map.of("previousStatus",previousStatus.name(),"newStatus",transfer.getStatus().name(),
+                    "expiredAt",java.time.Instant.now().toString(),"creatorUserId",transfer.getCreatorUserId()));
             return;
         }
         transfer.reject(supervisorId);
         transfers.save(transfer);
-        audit.record("TRANSFER_REJECTED", supervisorId, role.name(), id, Map.of());
+        audit.record("TRANSFER_REJECTED", supervisorId, role.name(), id,
+            Map.of("previousStatus",previousStatus.name(),"newStatus",transfer.getStatus().name(),
+                "createdBy",transfer.getCreatorUserId(),"rejectedBy",transfer.getApproverUserId(),
+                "rejectedAt",transfer.getApprovedAt().toString()));
     }
 
     @Transactional
@@ -192,7 +206,9 @@ public class CompanyTransferService {
             if (before != transfer.getStatus()) {
                 transfers.save(transfer);
                 audit.record("TRANSFER_EXPIRED", "SYSTEM", "SYSTEM", transfer.getId(),
-                    Map.of("reason", "vencida por falta de aprobación en el tiempo establecido",
+                    Map.of("previousStatus",before.name(),"newStatus",transfer.getStatus().name(),
+                        "expiredAt",java.time.Instant.now().toString(),
+                        "reason", "vencida por falta de aprobación en el tiempo establecido",
                         "createdAt", transfer.getCreatedAt().toString(),
                         "creatorUserId", transfer.getCreatorUserId()));
             }
@@ -212,7 +228,8 @@ public class CompanyTransferService {
         return transfers.findById(id).orElseThrow(() -> new IllegalArgumentException("Transfer not found"));
     }
 
-    private void execute(BankTransfer transfer) {
+    private void execute(BankTransfer transfer,String actorId,String actorRole) {
+        TransferStatus previousStatus=transfer.getStatus();
         BankAccount source = accounts.findByAccountNumber(transfer.getSourceAccount())
             .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
         BankAccount target = accounts.findByAccountNumber(transfer.getDestinationAccount())
@@ -242,11 +259,14 @@ public class CompanyTransferService {
             transactions.save(new Transaction(UUID.randomUUID().toString(), transfer.getDestinationAccount(),
                 transfer.getAmount(), TransactionType.CREDIT_TRANSFER));
         }
-        audit.record("TRANSFER_EXECUTED", transfer.getCreatorUserId(), "COMPANY", transfer.getId(),
-            Map.of("amount", transfer.getAmount().toString(),
-                "source", transfer.getSourceAccount(), "sourceBalanceBefore", sourceBefore.toString(),
-                "sourceBalanceAfter", source.getBalance().toString(),
-                "destination", transfer.getDestinationAccount(), "destinationBalanceBefore", targetBefore.toString(),
-                "destinationBalanceAfter", target.getBalance().toString()));
+        Map<String,Object> details=new java.util.LinkedHashMap<>();
+        details.put("previousStatus",previousStatus.name());details.put("newStatus",transfer.getStatus().name());
+        details.put("amount",transfer.getAmount().toString());details.put("creatorUserId",transfer.getCreatorUserId());
+        details.put("source",transfer.getSourceAccount());details.put("sourceBalanceBefore",sourceBefore.toString());
+        details.put("sourceBalanceAfter",source.getBalance().toString());
+        details.put("destination",transfer.getDestinationAccount());details.put("destinationBalanceBefore",targetBefore.toString());
+        details.put("destinationBalanceAfter",target.getBalance().toString());
+        if(transfer.getApproverUserId()!=null){details.put("approverUserId",transfer.getApproverUserId());details.put("approvedAt",transfer.getApprovedAt().toString());}
+        audit.record("TRANSFER_EXECUTED",actorId,actorRole,transfer.getId(),details);
     }
 }
