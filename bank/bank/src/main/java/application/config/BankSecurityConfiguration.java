@@ -56,7 +56,8 @@ public class BankSecurityConfiguration {
             String role = definition[1];
             if (role.equals("COMPANY_CUSTOMER") || role.equals("COMPANY_OPERATIONS_EMPLOYEE")
                     || role.equals("COMPANY_SUPERVISOR")) {
-                String companyId = env.getProperty("bank.security.company." + definition[0], "COMPANY001");
+                String companyKey = "BANK_COMPANY_ID_" + definition[0].replace('-', '_').toUpperCase();
+                String companyId = env.getProperty(companyKey, "COMPANY001");
                 if (companyId == null || companyId.isBlank()) {
                     throw new IllegalStateException("A company association is required for " + definition[0]);
                 }
