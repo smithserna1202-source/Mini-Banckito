@@ -40,7 +40,7 @@ public class CompanyController {
   if(customers.findById(r.legalRepresentativeId()).filter(application.domain.models.Customer::isActive).isEmpty())throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"An active natural-person legal representative is required");
   Company c=new Company(r.id(),r.legalName(),r.nit(),new application.domain.valueobjects.Email(r.email()),new PhoneNumber(r.phone()),r.address(),r.legalRepresentativeId());
   companies.save(c);audit.record("COMPANY_REGISTERED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),c.getId(),Map.of("nit",c.getNit()));
-  return Map.of("id",c.getId(),"legalName",c.getLegalName(),"nit",c.getNit(),"active",c.isActive());
+  return Map.of("id",c.getId(),"legalName",c.getLegalName(),"nit",c.getNit(),"active",c.isActive(),"blocked",c.isBlocked());
  }
  @GetMapping("/{id}") public Map<String,Object> get(@PathVariable String id,Authentication actor){
   Role role=AuthenticatedActor.role(actor);
