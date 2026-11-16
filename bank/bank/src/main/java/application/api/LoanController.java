@@ -20,7 +20,7 @@ public class LoanController {
  public record Decision(@NotNull @DecimalMin("0.01") BigDecimal approvedAmount,@NotNull @DecimalMin("0.00") BigDecimal interestRate){}
  @PostMapping public Map<String,String> request(@Valid @RequestBody RequestLoan r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);if(role!=Role.NATURAL_PERSON_CUSTOMER&&role!=Role.COMPANY_CUSTOMER)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only customers may request loans");
-  String applicant=AuthenticatedActor.id(actor);
+  String applicant=role==Role.COMPANY_CUSTOMER?AuthenticatedActor.companyId(actor):AuthenticatedActor.id(actor);
   Loan l=new Loan(r.id(),applicant,r.type(),Money.of(r.amount().toPlainString()),r.termMonths(),r.destinationAccount());loans.request(l);
   return Map.of("loanId",l.getId(),"status",l.getStatus().name());
  }
