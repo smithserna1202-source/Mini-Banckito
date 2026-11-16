@@ -106,7 +106,7 @@ curl -u C001:$BANK_DEFAULT_PASSWORD http://localhost:8080/api/customers/C001
 
 Al iniciar por primera vez, la aplicación crea usuarios de demostración en la tabla `bank_users` usando `BANK_DEFAULT_PASSWORD` o las contraseñas individuales configuradas. No sobrescribe usuarios existentes.
 
-Solo el rol `ADMINISTRATOR` puede gestionar usuarios mediante:
+El rol `ADMINISTRATOR` puede gestionar todos los usuarios. Los roles `COMPANY_CUSTOMER` y `COMPANY_SUPERVISOR` pueden crear y desactivar únicamente usuarios operativos de su propia empresa. Las altas requieren nombre, identificación, correo, teléfono, fecha de nacimiento, dirección, rol y entidad relacionada. Las operaciones disponibles son:
 - `POST /api/admin/users` — crear un usuario con nombre, contraseña (mínimo 12 caracteres), rol y entidad asociada.
 - `POST /api/admin/users/{username}/deactivate` — desactivar un usuario; la autenticación rechaza usuarios deshabilitados.
 - `POST /api/admin/users/{username}/customers/{customerId}` — asignar un cliente activo a un empleado comercial.
@@ -124,9 +124,9 @@ El empleado comercial solo puede consultar los perfiles que tenga asignados.
 - `POST /api/accounts/{number}/deposit`, `POST /api/accounts/{number}/withdraw` — depósitos y retiros.
 - `POST /api/transfers/internal` — transferencia interna.
 - `GET /api/transfers/history/{accountNumber}` — historial de una cuenta, sujeto a permisos de titularidad o ventanilla.
-- `POST /api/company-transfers`, `POST /api/company-transfers/{id}/approve`, `POST /api/company-transfers/{id}/reject` — transferencias de empresa.
+- `POST /api/company-transfers`, `GET /api/company-transfers/pending`, `POST /api/company-transfers/{id}/approve`, `POST /api/company-transfers/{id}/reject` — transferencias de empresa y cola de aprobación filtrada por compañía.
 - `POST /api/scheduled-transfers`, `POST /api/scheduled-transfers/{id}/cancel` — transferencias programadas.
-- `POST /api/loans`, `POST /api/loans/{id}/approve`, `POST /api/loans/{id}/reject`, `POST /api/loans/{id}/disburse` — solicitudes, decisiones y desembolsos de préstamos.
+- `POST /api/loans`, `GET /api/loans/{id}`, `POST /api/loans/{id}/approve`, `POST /api/loans/{id}/reject`, `POST /api/loans/{id}/disburse` — solicitudes, consulta según rol, decisiones y desembolsos de préstamos.
 - `GET /api/audit` — bitácora completa, solo para analistas internos y administradores.
 - `GET /api/audit/product/{productId}` — historial de auditoría de una cuenta, préstamo o transferencia que involucre productos propios o de la empresa.
 
@@ -144,7 +144,8 @@ curl -u teller01:$BANK_DEFAULT_PASSWORD -X POST http://localhost:8080/api/accoun
 - Las transferencias empresariales que superan `BANK_COMPANY_TRANSFER_APPROVAL_THRESHOLD` requieren aprobación, y las transferencias pendientes vencen después de 60 minutos. Las transferencias ejecutadas registran débitos y créditos en el historial SQL. Las transferencias programadas se procesan cada 30 segundos.
 - El servicio interbancario externo rechaza la operación porque no existe integración de liquidación con otra entidad.
 - El umbral de aprobación de transferencias empresariales es configurable mediante `BANK_COMPANY_TRANSFER_APPROVAL_THRESHOLD` (valor inicial de demostración: 5.000.000). El enunciado académico no fija un importe universal ni define un límite diario; por eso no se inventa un tope diario.
-- Los usuarios y sus roles se guardan en MySQL; las credenciales usan BCrypt y las cuentas desactivadas no pueden autenticarse. Los administradores pueden crear/desactivar usuarios y asignar clientes a empleados comerciales. La asociación de usuarios empresariales se configura mediante `BANK_COMPANY_ID_*`.
+- Los usuarios y sus datos básicos se guardan en MySQL; las credenciales usan BCrypt y las cuentas desactivadas no pueden autenticarse. Los administradores pueden crear/desactivar usuarios y asignar clientes a empleados comerciales; los administradores de empresa gestionan sus usuarios operativos dentro de su propia compañía. Los empleados comerciales pueden solicitar cuentas sin saldo inicial y préstamos solo para clientes asignados. La asociación de usuarios empresariales se configura mediante `BANK_COMPANY_ID_*`.
+- El catálogo se inicializa con los cuatro tipos de cuenta del enunciado y productos de préstamo/servicio. La apertura de cuentas valida que el tipo solicitado siga activo en el catálogo.
 - La configuración de seguridad es demostrativa para uso académico, no apta para producción bancaria.
 
 ## Pruebas
