@@ -39,7 +39,7 @@ class TransferPersistenceIntegrationTest {
         assertEquals(original.getAmount(), restored.getAmount());
         assertEquals("supervisor01", restored.getApproverUserId());
         assertEquals(original.getCreatedAt().truncatedTo(ChronoUnit.MILLIS),
-            restored.getCreatedAt().truncatedTo(ChronoUnit.MICROS));
+            restored.getCreatedAt().truncatedTo(ChronoUnit.MILLIS));
     }
 
     @Test
