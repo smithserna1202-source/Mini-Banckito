@@ -13,7 +13,7 @@ public class BankProductJpaAdapter implements BankProductRepository {
  @Override public Optional<BankProduct> findById(String id){return repository.findById(id).map(this::toDomain);}
  @Override public List<BankProduct> findAllActive(){return repository.findByActiveTrue().stream().map(this::toDomain).toList();}
  private BankProduct toDomain(BankProductEntity e){
-  BankProduct p=new BankProduct(e.getId(),e.getName(),e.getType(),e.getDescription(),e.getInterestRate());
+  BankProduct p=new BankProduct(e.getId(),e.getName(),e.getType(),e.getDescription(),e.getInterestRate(),e.isRequiresApproval());
   if(!e.isActive())p.deactivate();
   return p;
  }
