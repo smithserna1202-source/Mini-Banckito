@@ -61,7 +61,7 @@ public class LoanController {
 
         Loan loan = new Loan(request.id(), applicant, request.type(),
             Money.of(request.amount().toPlainString()), request.termMonths(), request.destinationAccount());
-        loans.request(loan);
+        loans.request(loan, AuthenticatedActor.id(actor), role);
         return Map.of("loanId", loan.getId(), "status", loan.getStatus().name());
     }
 
