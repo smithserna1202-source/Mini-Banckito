@@ -21,7 +21,8 @@ public class ScheduledTransferController {
  @PostMapping public Map<String,String> schedule(@Valid @RequestBody ScheduleRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);if(role!=Role.NATURAL_PERSON_CUSTOMER&&role!=Role.COMPANY_CUSTOMER&&role!=Role.COMPANY_OPERATIONS_EMPLOYEE)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Role cannot schedule transfers");
   String id=AuthenticatedActor.id(actor);
-  ScheduledTransfer t=scheduler.schedule(r.sourceAccount(),r.destinationAccount(),Money.of(r.amount().toPlainString()),r.scheduledAt(),id,role.name());
+  String ownerScope=role==Role.NATURAL_PERSON_CUSTOMER?id:AuthenticatedActor.companyId(actor);
+  ScheduledTransfer t=scheduler.schedule(r.sourceAccount(),r.destinationAccount(),Money.of(r.amount().toPlainString()),r.scheduledAt(),ownerScope,id,role.name());
   return Map.of("transferId",t.getId(),"status",t.getStatus().name(),"scheduledAt",t.getScheduledAt().toString());
  }
  @PostMapping("/{id}/cancel") public Map<String,String> cancel(@PathVariable String id,Authentication actor){
