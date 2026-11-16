@@ -20,6 +20,8 @@ public class CompanyController {
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateCompany r,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   if(companies.findById(r.id()).isPresent()||companies.findByNit(r.nit()).isPresent()||customers.findByIdentification(r.nit()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Company id or NIT already exists in the bank");
+  if(companies.findByEmail(r.email()).isPresent()||customers.findByEmail(r.email()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Email already exists");
+  if(companies.findByPhone(r.phone()).isPresent()||customers.findByPhone(r.phone()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Phone number already exists");
   if(customers.findById(r.legalRepresentativeId()).filter(application.domain.models.Customer::isActive).isEmpty())throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"An active natural-person legal representative is required");
   Company c=new Company(r.id(),r.legalName(),r.nit(),new application.domain.valueobjects.Email(r.email()),new PhoneNumber(r.phone()),r.address(),r.legalRepresentativeId());
   companies.save(c);audit.record("COMPANY_REGISTERED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),c.getId(),Map.of("nit",c.getNit()));
