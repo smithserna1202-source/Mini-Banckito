@@ -8,7 +8,7 @@ public class CustomerEntity {
  @Column(nullable=false) private String name;
  @Column(nullable=false,unique=true) private String identification;
  @Column(nullable=false,unique=true) private String email;
- @Column(unique=true) private String phone; private String address; private LocalDate birthDate; private boolean active; private boolean blocked;
+ @Column(unique=true) private String phone; private String address; private LocalDate birthDate; private boolean active; @Column(nullable=false, columnDefinition="boolean default false") private boolean blocked;
  protected CustomerEntity(){}
  public CustomerEntity(Customer c){id=c.getId();name=c.getName();identification=c.getIdentification();email=c.getEmail().getValue();phone=c.getPhone()==null?null:c.getPhone().getNumber();address=c.getAddress();birthDate=c.getBirthDate();active=c.isActiveFlag();blocked=c.isBlocked();}
  public String getId(){return id;} public String getName(){return name;} public String getIdentification(){return identification;} public String getEmail(){return email;}
