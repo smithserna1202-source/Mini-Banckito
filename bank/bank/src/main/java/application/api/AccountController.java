@@ -34,7 +34,9 @@ public class AccountController {
  @GetMapping("/{number}/balance") public Map<String,Object> balance(@PathVariable String number,Authentication actor){
   BankAccount a=find(number);Role role=AuthenticatedActor.role(actor);String id=AuthenticatedActor.id(actor);
   if(role==Role.TELLER||role==Role.ADMINISTRATOR)auth.require(role,AuthorizationService.Action.VIEW_ACCOUNT_STATUS);
-  else if(!a.getOwnerId().equals(id))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You may only view your own account");
+  else if(role==Role.COMPANY_CUSTOMER||role==Role.COMPANY_OPERATIONS_EMPLOYEE||role==Role.COMPANY_SUPERVISOR){
+   if(!a.getOwnerId().equals(AuthenticatedActor.companyId(actor)))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Account belongs to another company");
+  } else if(!a.getOwnerId().equals(id))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You may only view your own account");
   return Map.of("accountNumber",number,"balance",balances.checkBalance(a).toString(),"currency",a.getCurrency(),"status",a.getStatus());
  }
  @PostMapping("/{number}/deposit") public Map<String,Object> deposit(@PathVariable String number,@Valid @RequestBody AmountRequest r,Authentication actor){
