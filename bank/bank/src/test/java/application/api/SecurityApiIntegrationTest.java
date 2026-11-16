@@ -173,6 +173,24 @@ class SecurityApiIntegrationTest {
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isOk());
 
+        String accountRequest = """
+            {"accountNumber":"7000000077","ownerId":"CUSTOMER-ASSIGNED-77",
+             "type":"SAVINGS","initialBalance":0,"currency":"COP"}
+            """;
+        mvc.perform(post("/api/accounts")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(accountRequest))
+            .andExpect(status().isOk());
+
+        String fundedAccountRequest = """
+            {"accountNumber":"7000000078","ownerId":"CUSTOMER-ASSIGNED-77",
+             "type":"SAVINGS","initialBalance":100,"currency":"COP"}
+            """;
+        mvc.perform(post("/api/accounts")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(fundedAccountRequest))
+            .andExpect(status().isForbidden());
+
         mvc.perform(get("/api/customers/C001")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isForbidden());
