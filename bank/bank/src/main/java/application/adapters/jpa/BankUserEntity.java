@@ -41,6 +41,7 @@ public class BankUserEntity implements UserDetails {
         this.companyId = companyId;
         this.enabled = enabled;
     }
+    public void deactivate() { this.enabled = false; }
     public String getRole() { return role; }
     public String getRelatedEntityId() { return relatedEntityId; }
     public String getCompanyId() { return companyId; }
