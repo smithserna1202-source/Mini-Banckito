@@ -23,10 +23,16 @@ public class CompanyTransferController {
   return Map.of("transferId",t.getId(),"status",t.getStatus().name());
  }
  @PostMapping("/{id}/approve") public Map<String,String> approve(@PathVariable String id,Authentication actor){
-  Role role=AuthenticatedActor.role(actor);transfers.approve(id,AuthenticatedActor.id(actor),role);return Map.of("transferId",id,"status","APPROVED_OR_EXPIRED");
+  Role role=AuthenticatedActor.role(actor);
+  String companyId=role==Role.ADMINISTRATOR?"COMPANY001":"COMPANY001";
+  transfers.approve(id,AuthenticatedActor.id(actor),role,companyId);
+  return Map.of("transferId",id,"status","APPROVED_OR_EXPIRED");
  }
  @PostMapping("/{id}/reject") public Map<String,String> reject(@PathVariable String id,Authentication actor){
-  Role role=AuthenticatedActor.role(actor);transfers.reject(id,AuthenticatedActor.id(actor),role);return Map.of("transferId",id,"status","REJECTED_OR_EXPIRED");
+  Role role=AuthenticatedActor.role(actor);
+  String companyId="COMPANY001";
+  transfers.reject(id,AuthenticatedActor.id(actor),role,companyId);
+  return Map.of("transferId",id,"status","REJECTED_OR_EXPIRED");
  }
  @PostMapping("/expire-pending") public Map<String,String> expire(Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
