@@ -6,6 +6,7 @@ import application.domain.models.Loan;
 import application.domain.ports.AuditLogRepository;
 import application.domain.ports.BankAccountRepository;
 import application.domain.ports.LoanRepository;
+import application.domain.ports.BankTransferRepository;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -18,11 +19,13 @@ public class AuditLogController {
     private final AuditLogRepository audit;
     private final BankAccountRepository accounts;
     private final LoanRepository loans;
+    private final BankTransferRepository transfers;
 
-    public AuditLogController(AuditLogRepository audit, BankAccountRepository accounts, LoanRepository loans) {
+    public AuditLogController(AuditLogRepository audit, BankAccountRepository accounts, LoanRepository loans, BankTransferRepository transfers) {
         this.audit = audit;
         this.accounts = accounts;
         this.loans = loans;
+        this.transfers = transfers;
     }
 
     @GetMapping
@@ -45,7 +48,14 @@ public class AuditLogController {
             .map(account -> account.getOwnerId().equals(requester))
             .orElseGet(() -> loans.findById(productId)
                 .map(loan -> loan.getApplicantId().equals(requester))
-                .orElse(false));
+                .orElseGet(() -> transfers.findById(productId)
+                    .map(transfer -> {
+                        boolean ownsSource = accounts.findByAccountNumber(transfer.getSourceAccount())
+                            .map(account -> account.getOwnerId().equals(requester)).orElse(false);
+                        boolean ownsDestination = accounts.findByAccountNumber(transfer.getDestinationAccount())
+                            .map(account -> account.getOwnerId().equals(requester)).orElse(false);
+                        return ownsSource || ownsDestination;
+                    }).orElse(false)));
         if (!ownsProduct) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
         }
