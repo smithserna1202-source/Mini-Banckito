@@ -108,7 +108,7 @@ Al iniciar por primera vez, la aplicación crea usuarios de demostración en la 
 
 El rol `ADMINISTRATOR` puede gestionar todos los usuarios. Los roles `COMPANY_CUSTOMER` y `COMPANY_SUPERVISOR` pueden crear y desactivar únicamente usuarios operativos de su propia empresa. Las altas requieren nombre, identificación, correo, teléfono, fecha de nacimiento, dirección, rol y entidad relacionada. Las operaciones disponibles son:
 - `POST /api/admin/users` — crear un usuario con nombre, contraseña (mínimo 12 caracteres), rol y entidad asociada.
-- `POST /api/admin/users/{username}/deactivate` — desactivar un usuario; la autenticación rechaza usuarios deshabilitados.
+- `POST /api/admin/users/{username}/deactivate` y `POST /api/admin/users/{username}/activate` — desactivar o reactivar usuarios; para clientes naturales y empresas, el estado del perfil se sincroniza con el estado de acceso.
 - `POST /api/admin/users/{username}/customers/{customerId}` — asignar un cliente activo a un empleado comercial.
 
 El empleado comercial solo puede consultar los perfiles que tenga asignados.
