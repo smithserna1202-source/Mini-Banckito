@@ -8,6 +8,8 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.List;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,9 @@ public class CompanyTransferController {
  private final CompanyTransferService transfers;
  public CompanyTransferController(CompanyTransferService transfers){this.transfers=transfers;}
  public record CreateRequest(@NotBlank String sourceAccount,@NotBlank String destinationAccount,@NotNull @DecimalMin("0.01") BigDecimal amount){}
+ public record BatchPayment(@NotBlank String destinationAccount,@NotNull @DecimalMin("0.01") BigDecimal amount){}
+ public record BatchRequest(@NotBlank String sourceAccount,@NotEmpty @Size(max=100) List<@Valid BatchPayment> payments){}
+
  @PostMapping public Map<String,String> create(@Valid @RequestBody CreateRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);if(role!=Role.COMPANY_OPERATIONS_EMPLOYEE&&role!=Role.COMPANY_CUSTOMER&&role!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Role cannot create company transfers");
   String actorId=AuthenticatedActor.id(actor);String companyId=role==Role.ADMINISTRATOR?"COMPANY001":AuthenticatedActor.companyId(actor);
@@ -24,6 +29,21 @@ public class CompanyTransferController {
   return Map.of("transferId",t.getId(),"status",t.getStatus().name());
  }
 
+
+ @PostMapping("/batch")
+ public Map<String,Object> createBatch(@Valid @RequestBody BatchRequest request,Authentication actor){
+  Role role=AuthenticatedActor.role(actor);
+  if(role!=Role.COMPANY_OPERATIONS_EMPLOYEE&&role!=Role.COMPANY_CUSTOMER&&role!=Role.ADMINISTRATOR)
+   throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Role cannot create company payments");
+  String actorId=AuthenticatedActor.id(actor);
+  String companyId=role==Role.ADMINISTRATOR?"COMPANY001":AuthenticatedActor.companyId(actor);
+  List<CompanyTransferService.PaymentInstruction> instructions=request.payments().stream()
+   .map(payment->new CompanyTransferService.PaymentInstruction(payment.destinationAccount(),Money.of(payment.amount().toPlainString())))
+   .toList();
+  List<BankTransfer> created=transfers.createBatch(companyId,request.sourceAccount(),instructions,actorId,role);
+  return Map.of("count",created.size(),"transfers",created.stream().map(t->Map.of(
+   "transferId",t.getId(),"status",t.getStatus().name(),"amount",t.getAmount().toString())).toList());
+ }
  @GetMapping("/pending")
  public List<Map<String,Object>> pending(Authentication actor){
   Role role=AuthenticatedActor.role(actor);
