@@ -143,9 +143,9 @@ public class CompanyTransferService {
         transfers.save(transfer);
         if (transactions != null) {
             transactions.save(new Transaction(UUID.randomUUID().toString(), transfer.getSourceAccount(),
-                transfer.getAmount(), TransactionType.DEBIT_TRANSFER, transfer.getCreatedAt()));
+                transfer.getAmount(), TransactionType.DEBIT_TRANSFER));
             transactions.save(new Transaction(UUID.randomUUID().toString(), transfer.getDestinationAccount(),
-                transfer.getAmount(), TransactionType.CREDIT_TRANSFER, transfer.getCreatedAt()));
+                transfer.getAmount(), TransactionType.CREDIT_TRANSFER));
         }
         audit.record("TRANSFER_EXECUTED", transfer.getCreatorUserId(), "COMPANY", transfer.getId(),
             Map.of("amount", transfer.getAmount().toString(),
