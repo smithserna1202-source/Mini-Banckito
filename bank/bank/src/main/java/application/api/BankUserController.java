@@ -5,6 +5,7 @@ import application.adapters.jpa.CommercialCustomerAssignmentEntity;
 import application.adapters.jpa.SpringDataCommercialCustomerAssignmentRepository;
 import application.adapters.jpa.SpringDataBankUserRepository;
 import application.domain.enums.Role;
+import application.domain.services.AuditService;
 import application.domain.ports.CompanyRepository;
 import application.domain.ports.CustomerRepository;
 import jakarta.validation.Valid;
@@ -29,15 +30,17 @@ public class BankUserController {
     private final CustomerRepository customers;
     private final CompanyRepository companies;
     private final SpringDataCommercialCustomerAssignmentRepository assignments;
+    private final AuditService audit;
 
     public BankUserController(SpringDataBankUserRepository users, PasswordEncoder passwords,
                               CustomerRepository customers, CompanyRepository companies,
-                              SpringDataCommercialCustomerAssignmentRepository assignments) {
+                              SpringDataCommercialCustomerAssignmentRepository assignments, AuditService audit) {
         this.users = users;
         this.passwords = passwords;
         this.customers = customers;
         this.companies = companies;
         this.assignments = assignments;
+        this.audit = audit;
     }
 
     public record CreateUserRequest(
@@ -126,7 +129,11 @@ public class BankUserController {
             passwords.encode(request.password()), role.name(), request.relatedEntityId(),
             companyId, true, request.fullName(), request.identification(), request.email(),
             request.phone(), request.birthDate(), request.address());
-        return UserResponse.from(users.save(user));
+        BankUserEntity saved = users.save(user);
+        audit.record("USER_CREATED", AuthenticatedActor.id(authentication), managingRole.name(),
+            saved.getUsername(), java.util.Map.of("role", saved.getRole(),
+                "relatedEntityId", saved.getRelatedEntityId()));
+        return UserResponse.from(saved);
     }
 
     @PostMapping("/{username}/deactivate")
@@ -144,7 +151,10 @@ public class BankUserController {
             }
         }
         user.deactivate();
-        return UserResponse.from(users.save(user));
+        BankUserEntity saved = users.save(user);
+        audit.record("USER_DEACTIVATED", AuthenticatedActor.id(authentication), managingRole.name(),
+            saved.getUsername(), java.util.Map.of("role", saved.getRole()));
+        return UserResponse.from(saved);
     }
 
 
@@ -165,6 +175,8 @@ public class BankUserController {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer is already assigned to this employee");
         }
         assignments.save(new CommercialCustomerAssignmentEntity(username, customerId));
+        audit.record("CUSTOMER_ASSIGNED_TO_COMMERCIAL", AuthenticatedActor.id(authentication),
+            Role.ADMINISTRATOR.name(), customerId, java.util.Map.of("employeeUsername", username));
     }
 
     private static void requireAdministrator(Authentication authentication) {
