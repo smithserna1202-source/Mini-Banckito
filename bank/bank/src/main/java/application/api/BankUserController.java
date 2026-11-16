@@ -168,12 +168,57 @@ public class BankUserController {
             }
         }
         user.deactivate();
+        if (Role.NATURAL_PERSON_CUSTOMER.name().equals(user.getRole())) {
+            customers.findById(user.getRelatedEntityId()).ifPresent(customer -> {
+                customer.deactivate();
+                customers.save(customer);
+            });
+        } else if (Role.COMPANY_CUSTOMER.name().equals(user.getRole())) {
+            companies.findById(user.getCompanyId()).ifPresent(company -> {
+                company.deactivate();
+                companies.save(company);
+            });
+        }
         BankUserEntity saved = users.save(user);
         audit.record("USER_DEACTIVATED", AuthenticatedActor.id(authentication), managingRole.name(),
             saved.getUsername(), java.util.Map.of("role", saved.getRole()));
         return UserResponse.from(saved);
     }
 
+
+
+    @PostMapping("/{username}/activate")
+    @Transactional
+    public UserResponse activate(@PathVariable String username, Authentication authentication) {
+        Role managingRole = AuthenticatedActor.role(authentication);
+        BankUserEntity user = users.findById(username)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (managingRole != Role.ADMINISTRATOR) {
+            boolean companyManager = managingRole == Role.COMPANY_CUSTOMER || managingRole == Role.COMPANY_SUPERVISOR;
+            String companyId = companyManager ? AuthenticatedActor.companyId(authentication) : null;
+            if (!companyManager || !Role.COMPANY_OPERATIONS_EMPLOYEE.name().equals(user.getRole())
+                    || !companyId.equals(user.getCompanyId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Company managers may activate only operational users of their own company");
+            }
+        }
+        user.activate();
+        if (Role.NATURAL_PERSON_CUSTOMER.name().equals(user.getRole())) {
+            customers.findById(user.getRelatedEntityId()).ifPresent(customer -> {
+                customer.reactivate();
+                customers.save(customer);
+            });
+        } else if (Role.COMPANY_CUSTOMER.name().equals(user.getRole())) {
+            companies.findById(user.getCompanyId()).ifPresent(company -> {
+                company.reactivate();
+                companies.save(company);
+            });
+        }
+        BankUserEntity saved = users.save(user);
+        audit.record("USER_ACTIVATED", AuthenticatedActor.id(authentication), managingRole.name(),
+            saved.getUsername(), java.util.Map.of("role", saved.getRole()));
+        return UserResponse.from(saved);
+    }
 
     @PostMapping("/{username}/customers/{customerId}")
     @ResponseStatus(HttpStatus.CREATED)
