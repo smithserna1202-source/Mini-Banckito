@@ -77,9 +77,10 @@ public class CompanyTransferService {
     }
 
     @Transactional
-    public void approve(String id, String supervisorId, Role role) {
+    public void approve(String id, String supervisorId, Role role, String companyId) {
         authorization.require(role, AuthorizationService.Action.APPROVE_HIGH_VALUE_TRANSFER);
         BankTransfer transfer = require(id);
+        requireCompanyScope(transfer, role, companyId);
         transfer.expire();
         if (transfer.getStatus() == TransferStatus.EXPIRED) {
             transfers.save(transfer);
@@ -92,9 +93,10 @@ public class CompanyTransferService {
     }
 
     @Transactional
-    public void reject(String id, String supervisorId, Role role) {
+    public void reject(String id, String supervisorId, Role role, String companyId) {
         authorization.require(role, AuthorizationService.Action.APPROVE_HIGH_VALUE_TRANSFER);
         BankTransfer transfer = require(id);
+        requireCompanyScope(transfer, role, companyId);
         transfer.expire();
         if (transfer.getStatus() == TransferStatus.EXPIRED) {
             transfers.save(transfer);
@@ -117,6 +119,15 @@ public class CompanyTransferService {
                 audit.record("TRANSFER_EXPIRED", "SYSTEM", "SYSTEM", transfer.getId(), Map.of());
             }
         });
+    }
+
+    private void requireCompanyScope(BankTransfer transfer, Role role, String companyId) {
+        if (role == Role.ADMINISTRATOR) return;
+        BankAccount source = accounts.findByAccountNumber(transfer.getSourceAccount())
+            .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
+        if (companyId == null || !source.getOwnerId().equals(companyId)) {
+            throw new SecurityException("Supervisor cannot approve transfers for another company");
+        }
     }
 
     private BankTransfer require(String id) {
