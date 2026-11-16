@@ -26,17 +26,16 @@ public class BankUserEntity implements UserDetails {
     private String companyId;
     @Column(nullable = false)
     private boolean enabled;
-    @Column(nullable = false, length = 160)
+    @Column(length = 160)
     private String fullName;
-    @Column(nullable = false, unique = true, length = 80)
+    @Column(unique = true, length = 80)
     private String identification;
-    @Column(nullable = false, unique = true, length = 180)
+    @Column(unique = true, length = 180)
     private String email;
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String phone;
-    @Column(nullable = false)
     private LocalDate birthDate;
-    @Column(nullable = false, length = 300)
+    @Column(length = 300)
     private String address;
 
     protected BankUserEntity() {}
