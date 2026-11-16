@@ -4,7 +4,6 @@ import application.adapters.jpa.SpringDataCommercialCustomerAssignmentRepository
 import application.domain.enums.LoanStatus;
 import application.domain.enums.Role;
 import application.domain.models.Loan;
-import application.domain.ports.BankAccountRepository;
 import application.domain.ports.LoanRepository;
 import application.domain.services.LoanService;
 import application.domain.valueobjects.Money;
@@ -26,8 +25,7 @@ public class LoanController {
     private final SpringDataCommercialCustomerAssignmentRepository assignments;
 
     public LoanController(LoanService loans, LoanRepository repository,
-                          SpringDataCommercialCustomerAssignmentRepository assignments,
-                          BankAccountRepository accounts) {
+                          SpringDataCommercialCustomerAssignmentRepository assignments) {
         this.loans = loans;
         this.repository = repository;
         this.assignments = assignments;
