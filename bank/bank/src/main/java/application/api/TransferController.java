@@ -27,7 +27,9 @@ public class TransferController {
  @PostMapping("/internal") public Map<String,Object> transfer(@Valid @RequestBody TransferRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);auth.require(role,AuthorizationService.Action.REQUEST_TRANSFER);
   String requester=AuthenticatedActor.id(actor);BankAccount source=find(r.sourceAccount()),target=find(r.destinationAccount());
-  if(!source.getOwnerId().equals(requester))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Requester does not own the source account");
+  String ownerScope=(role==Role.COMPANY_CUSTOMER||role==Role.COMPANY_OPERATIONS_EMPLOYEE||role==Role.COMPANY_SUPERVISOR)
+      ?AuthenticatedActor.companyId(actor):requester;
+  if(!source.getOwnerId().equals(ownerScope))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Requester does not own the source account");
   Money amount=Money.of(r.amount().toPlainString());transfers.transfer(source,target,amount);accounts.save(source);accounts.save(target);
   transactions.save(new Transaction(UUID.randomUUID().toString(),r.sourceAccount(),amount,TransactionType.DEBIT_TRANSFER));
   transactions.save(new Transaction(UUID.randomUUID().toString(),r.destinationAccount(),amount,TransactionType.CREDIT_TRANSFER));
