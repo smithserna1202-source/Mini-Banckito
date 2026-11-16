@@ -75,6 +75,14 @@ public class BankUserEntity implements UserDetails {
     }
 
     public void deactivate() { this.enabled = false; }
+    public void synchronizeDemoNaturalCustomerProfile() {
+        fullName = "natural-customer";
+        identification = "DEMO-C001";
+        email = "natural-customer@demo.local";
+        phone = "3000000000";
+        birthDate = LocalDate.of(1990, 1, 1);
+        address = "Datos de demostración";
+    }
     public void completeMissingDemoProfile() {
         if (fullName == null || fullName.isBlank()) fullName = username;
         if (identification == null || identification.isBlank()) identification = "DEMO-" + username;
