@@ -68,8 +68,9 @@ public class BankingConfiguration {
 
     @Bean @ConditionalOnMissingBean
     public LoanService loanService(LoanRepository loans, BankAccountRepository accounts,
-                                   AuthorizationService authorization, AuditService audit) {
-        return new LoanService(loans, accounts, authorization, audit);
+                                   AuthorizationService authorization, AuditService audit,
+                                   CustomerRepository customers, CompanyRepository companies) {
+        return new LoanService(loans, accounts, authorization, audit, customers, companies);
     }
 
     @Bean @ConditionalOnMissingBean
