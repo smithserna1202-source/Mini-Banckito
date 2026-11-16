@@ -41,7 +41,13 @@ public class LoanService {
  }
  @Transactional
  public void request(Loan loan){
+  request(loan,loan.getApplicantId(),"CUSTOMER");
+ }
+ @Transactional
+ public void request(Loan loan,String requesterId,Role requesterRole){
   Objects.requireNonNull(loan);
+  Objects.requireNonNull(requesterId);
+  Objects.requireNonNull(requesterRole);
   if(products!=null&&products.findAllActive().stream().noneMatch(p->p.getType()==ProductType.LOAN&&p.isRequiresApproval()))
    throw new IllegalStateException("Loan product is not available in the active product catalog");
   if(customers!=null&&companies!=null){
@@ -57,22 +63,31 @@ public class LoanService {
   if(!destination.getOwnerId().equals(loan.getApplicantId()))throw new SecurityException("Destination account must belong to the applicant");
   if(destination.getStatus()!=AccountStatus.ACTIVE)throw new IllegalStateException("Destination account must be active");
   loans.save(loan);
-  audit.record("LOAN_REQUESTED",loan.getApplicantId(),"CUSTOMER",loan.getId(),Map.of("amount",loan.getRequestedAmount().toString()));
+  audit.record("LOAN_REQUESTED",requesterId,requesterRole.name(),loan.getId(),
+   Map.of("applicantId",loan.getApplicantId(),"amount",loan.getRequestedAmount().toString(),
+    "previousStatus","NONE","newStatus",loan.getStatus().name(),"requestedAt",loan.getRequestedAt().toString()));
  }
  @Transactional
  public void approve(String loanId,String analystId,Role role,Money amount,BigDecimal rate){
   if(role!=Role.INTERNAL_ANALYST)throw new SecurityException("Only an internal analyst may approve loans");
   authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
+  LoanStatus previousStatus=loan.getStatus();
   loan.approve(analystId,amount,rate);loans.save(loan);
-  audit.record("LOAN_APPROVED",analystId,role.name(),loanId,Map.of("amount",amount.toString(),"rate",rate.toPlainString()));
+  audit.record("LOAN_APPROVED",analystId,role.name(),loanId,
+   Map.of("previousStatus",previousStatus.name(),"newStatus",loan.getStatus().name(),
+    "amount",amount.toString(),"rate",rate.toPlainString(),
+    "approvedAt",loan.getApprovedAt().toString(),"analystId",analystId));
  }
  @Transactional
  public void reject(String loanId,String analystId,Role role){
   if(role!=Role.INTERNAL_ANALYST)throw new SecurityException("Only an internal analyst may reject loans");
   authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
-  loan.reject(analystId);loans.save(loan);audit.record("LOAN_REJECTED",analystId,role.name(),loanId,Map.of());
+  LoanStatus previousStatus=loan.getStatus();
+  loan.reject(analystId);loans.save(loan);
+  audit.record("LOAN_REJECTED",analystId,role.name(),loanId,
+   Map.of("previousStatus",previousStatus.name(),"newStatus",loan.getStatus().name(),"analystId",analystId));
  }
  @Transactional
  public void disburse(String loanId,String analystId,Role role){
@@ -81,12 +96,16 @@ public class LoanService {
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
   if(loan.getStatus()!=LoanStatus.APPROVED||loan.getApprovedAmount()==null||!loan.getApprovedAmount().isPositive())
    throw new IllegalStateException("Only an approved loan with a positive approved amount can be disbursed");
+  LoanStatus previousStatus=loan.getStatus();
   BankAccount account=accounts.findByAccountNumber(loan.getDestinationAccount()).orElseThrow(()->new IllegalArgumentException("Destination account not found"));
   if(!account.getOwnerId().equals(loan.getApplicantId()))throw new SecurityException("Destination account does not belong to the applicant");
   if(account.getStatus()!=AccountStatus.ACTIVE)throw new IllegalStateException("Destination account is not active");
   account.deposit(loan.getApprovedAmount());
   loan.markDisbursed();
   accounts.save(account);loans.save(loan);
-  audit.record("LOAN_DISBURSED",analystId,role.name(),loanId,Map.of("amount",loan.getApprovedAmount().toString(),"account",account.getAccountNumber().getValue()));
+  audit.record("LOAN_DISBURSED",analystId,role.name(),loanId,
+   Map.of("previousStatus",previousStatus.name(),"newStatus",loan.getStatus().name(),
+    "amount",loan.getApprovedAmount().toString(),"account",account.getAccountNumber().getValue(),
+    "disbursedAt",loan.getDisbursedAt().toString(),"analystId",analystId));
  }
 }
