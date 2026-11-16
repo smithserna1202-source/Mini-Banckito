@@ -1,5 +1,6 @@
 package application.adapters.jpa;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import jakarta.persistence.Column;
@@ -25,14 +26,40 @@ public class BankUserEntity implements UserDetails {
     private String companyId;
     @Column(nullable = false)
     private boolean enabled;
+    @Column(nullable = false, length = 160)
+    private String fullName;
+    @Column(nullable = false, unique = true, length = 80)
+    private String identification;
+    @Column(nullable = false, unique = true, length = 180)
+    private String email;
+    @Column(nullable = false, length = 20)
+    private String phone;
+    @Column(nullable = false)
+    private LocalDate birthDate;
+    @Column(nullable = false, length = 300)
+    private String address;
 
     protected BankUserEntity() {}
 
+    /** Compatibility constructor for seeded/demo and lower-level tests. */
     public BankUserEntity(String username, String passwordHash, String role,
                           String relatedEntityId, String companyId, boolean enabled) {
+        this(username, passwordHash, role, relatedEntityId, companyId, enabled,
+            username, "DEMO-" + username, username + "@demo.local",
+            "3000000000", LocalDate.of(1990, 1, 1), "Datos de demostración");
+    }
+
+    public BankUserEntity(String username, String passwordHash, String role,
+                          String relatedEntityId, String companyId, boolean enabled,
+                          String fullName, String identification, String email,
+                          String phone, LocalDate birthDate, String address) {
         if (username == null || username.isBlank() || passwordHash == null || passwordHash.isBlank()
-                || role == null || role.isBlank() || relatedEntityId == null || relatedEntityId.isBlank()) {
-            throw new IllegalArgumentException("Username, password, role and related entity are required");
+                || role == null || role.isBlank() || relatedEntityId == null || relatedEntityId.isBlank()
+                || fullName == null || fullName.isBlank() || identification == null || identification.isBlank()
+                || email == null || email.isBlank() || !email.contains("@")
+                || phone == null || !phone.matches("\\d{7,15}")
+                || birthDate == null || address == null || address.isBlank()) {
+            throw new IllegalArgumentException("All bank user identity and contact fields are required");
         }
         this.username = username;
         this.passwordHash = passwordHash;
@@ -40,11 +67,24 @@ public class BankUserEntity implements UserDetails {
         this.relatedEntityId = relatedEntityId;
         this.companyId = companyId;
         this.enabled = enabled;
+        this.fullName = fullName;
+        this.identification = identification;
+        this.email = email;
+        this.phone = phone;
+        this.birthDate = birthDate;
+        this.address = address;
     }
+
     public void deactivate() { this.enabled = false; }
     public String getRole() { return role; }
     public String getRelatedEntityId() { return relatedEntityId; }
     public String getCompanyId() { return companyId; }
+    public String getFullName() { return fullName; }
+    public String getIdentification() { return identification; }
+    public String getEmailAddress() { return email; }
+    public String getPhoneNumber() { return phone; }
+    public LocalDate getBirthDate() { return birthDate; }
+    public String getAddress() { return address; }
     @Override public String getUsername() { return username; }
     @Override public String getPassword() { return passwordHash; }
     @Override public boolean isEnabled() { return enabled; }
