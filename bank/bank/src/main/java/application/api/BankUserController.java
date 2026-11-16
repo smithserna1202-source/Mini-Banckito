@@ -116,6 +116,9 @@ public class BankUserController {
         if (users.existsByEmail(request.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User email already exists");
         }
+        if (users.existsByPhone(request.phone())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User phone already exists");
+        }
 
         Role role = request.role();
         String companyId = request.companyId();
