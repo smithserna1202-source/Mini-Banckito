@@ -12,13 +12,8 @@ public class BankAccountJpaAdapter implements BankAccountRepository {
  public BankAccountJpaAdapter(SpringDataBankAccountRepository repository){this.repository=repository;}
  @Override public void save(BankAccount account){repository.save(new BankAccountEntity(account));}
  @Override public Optional<BankAccount> findByAccountNumber(String number){
-  return repository.findById(number).map(e->{
-   BankAccount a=new BankAccount(new AccountNumber(e.getAccountNumber()),new Money(e.getBalance()),e.getOwnerId(),e.getType(),e.getCurrency());
-   if(e.getStatus()==application.domain.enums.AccountStatus.FROZEN)a.freeze();
-   else if(e.getStatus()==application.domain.enums.AccountStatus.BLOCKED)a.block();
-   else if(e.getStatus()==application.domain.enums.AccountStatus.CLOSED)a.close();
-   else if(e.getStatus()==application.domain.enums.AccountStatus.CANCELLED)a.cancel();
-   return a;
-  });
+  return repository.findById(number).map(e->BankAccount.restore(
+   new AccountNumber(e.getAccountNumber()),new Money(e.getBalance()),e.getOwnerId(),e.getType(),
+   e.getCurrency(),e.getStatus(),e.getOpenedAt()));
  }
 }
