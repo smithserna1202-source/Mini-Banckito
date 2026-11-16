@@ -57,4 +57,14 @@ class LoanServiceTest {
   assertTrue(loans.findById("L009").isEmpty());
  }
 
+ @Test void administratorCannotApproveOrRejectLoans(){
+  InMemoryLoanRepository loans=new InMemoryLoanRepository();
+  LoanService service=new LoanService(loans,new InMemoryBankAccountRepository(),
+   new AuthorizationService(),new AuditService(new InMemoryAuditLogRepository()));
+  loans.save(new Loan("L003","C001","PERSONAL",Money.of("500"),12,"1234567890"));
+  assertThrows(SecurityException.class,()->service.approve("L003","admin01",Role.ADMINISTRATOR,
+   Money.of("400"),java.math.BigDecimal.ONE));
+  assertThrows(SecurityException.class,()->service.reject("L003","admin01",Role.ADMINISTRATOR));
+ }
+
 }
