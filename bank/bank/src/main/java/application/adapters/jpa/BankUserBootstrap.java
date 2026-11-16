@@ -48,6 +48,9 @@ public class BankUserBootstrap implements ApplicationRunner {
         for (String[] definition : USERS) {
             String username = environment.getProperty("bank.security.users." + definition[0], definition[2]);
             if (users.existsById(username)) {
+                BankUserEntity existing = users.findById(username).orElseThrow();
+                existing.completeMissingDemoProfile();
+                users.save(existing);
                 continue;
             }
 
