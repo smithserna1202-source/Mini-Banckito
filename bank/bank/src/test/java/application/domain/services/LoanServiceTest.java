@@ -24,7 +24,8 @@ class LoanServiceTest {
   Loan loan=new Loan("L001","C001","PERSONAL",Money.of("500"),12,"1234567890");
   service.request(loan);
   assertEquals(LoanStatus.UNDER_REVIEW,loan.getStatus());
-  assertThrows(IllegalStateException.class,()->service.disburse("L001"));
+  assertThrows(SecurityException.class,()->service.disburse("L001","teller01",Role.TELLER));
+  assertThrows(IllegalStateException.class,()->service.disburse("L001","analyst01",Role.INTERNAL_ANALYST));
   assertEquals(Money.of("50"),destination.getBalance());
  }
  @Test void onlyAnalystMayApproveLoan(){
