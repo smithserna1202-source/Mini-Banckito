@@ -40,14 +40,16 @@ public class AuditLogController {
     @GetMapping("/product/{productId}")
     public Object productHistory(@PathVariable String productId, Authentication actor) {
         Role role = AuthenticatedActor.role(actor);
-        if (role != Role.NATURAL_PERSON_CUSTOMER && role != Role.COMPANY_CUSTOMER) {
+        if (role != Role.NATURAL_PERSON_CUSTOMER && role != Role.COMPANY_CUSTOMER
+                && role != Role.COMPANY_OPERATIONS_EMPLOYEE && role != Role.COMPANY_SUPERVISOR) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Customer product history only");
         }
         String requester = AuthenticatedActor.id(actor);
+        String ownerScope = role == Role.NATURAL_PERSON_CUSTOMER ? requester : AuthenticatedActor.companyId(actor);
         boolean ownsProduct = accounts.findByAccountNumber(productId)
-            .map(account -> account.getOwnerId().equals(requester))
+            .map(account -> account.getOwnerId().equals(ownerScope))
             .orElseGet(() -> loans.findById(productId)
-                .map(loan -> loan.getApplicantId().equals(requester))
+                .map(loan -> loan.getApplicantId().equals(ownerScope))
                 .orElseGet(() -> transfers.findById(productId)
                     .map(transfer -> {
                         boolean ownsSource = accounts.findByAccountNumber(transfer.getSourceAccount())
