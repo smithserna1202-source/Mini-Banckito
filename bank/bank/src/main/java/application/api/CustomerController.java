@@ -47,6 +47,7 @@ public class CustomerController {
    if(!assigned)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Customer is not assigned to this user");
   }
   Customer c=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
+  if(role==Role.TELLER)return Map.of("id",c.getId(),"name",c.getName(),"active",c.isActive());
   return Map.of("id",c.getId(),"name",c.getName(),"email",c.getEmail().getValue(),"identification",c.getIdentification(),"active",c.isActive());
  }
 }
