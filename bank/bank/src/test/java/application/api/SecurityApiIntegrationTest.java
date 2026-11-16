@@ -261,4 +261,30 @@ class SecurityApiIntegrationTest {
         assertFalse(response.contains("interestRate"));
     }
 
+    @Test
+    void tellerCanRegisterNewCustomerAndOpenTheirAccount() throws Exception {
+        String customerBody = """
+            {"customerId":"TELLER-CUSTOMER-77","name":"New Bank Customer",
+             "identification":"ID-TELLER-CUSTOMER-77","email":"newcustomer77@example.test",
+             "phone":"3001234590","birthDate":"1990-01-01","address":"Customer address"}
+            """;
+        mvc.perform(post("/api/customers")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(customerBody))
+            .andExpect(status().isOk());
+
+        String accountBody = """
+            {"accountNumber":"7000000079","ownerId":"TELLER-CUSTOMER-77",
+             "type":"SAVINGS","initialBalance":0,"currency":"COP"}
+            """;
+        mvc.perform(post("/api/accounts")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(accountBody))
+            .andExpect(status().isOk());
+
+        mvc.perform(get("/api/customers/TELLER-CUSTOMER-77")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+    }
+
 }
