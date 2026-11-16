@@ -75,6 +75,7 @@ public class BankUserEntity implements UserDetails {
     }
 
     public void deactivate() { this.enabled = false; }
+    public void activate() { this.enabled = true; }
     public void synchronizeDemoNaturalCustomerProfile() {
         fullName = "natural-customer";
         identification = "DEMO-C001";
