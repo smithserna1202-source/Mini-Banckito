@@ -32,7 +32,7 @@ public class CustomerController {
  }
  @GetMapping("/{id}") public Map<String,Object> get(@PathVariable String id,Authentication actor){
   Role role=AuthenticatedActor.role(actor);String requester=AuthenticatedActor.id(actor);
-  if(!requester.equals(id)&&role!=Role.ADMINISTRATOR){
+  if(!requester.equals(id)&&role!=Role.ADMINISTRATOR&&role!=Role.INTERNAL_ANALYST){
    boolean assigned=role==Role.COMMERCIAL_EMPLOYEE
     &&assignments.findByEmployeeUsernameAndCustomerIdAndActiveTrue(requester,id).isPresent();
    if(!assigned)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Customer is not assigned to this user");
