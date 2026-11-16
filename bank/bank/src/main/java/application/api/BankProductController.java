@@ -21,7 +21,7 @@ public class BankProductController {
   boolean teller=AuthenticatedActor.role(actor)==Role.TELLER;
   return products.findAllActive().stream().map(p->{
    Map<String,Object> item=new java.util.LinkedHashMap<>();
-   item.put("id",p.getId());item.put("name",p.getName());item.put("type",p.getType());item.put("description",p.getDescription());item.put("requiresApproval",p.isRequiresApproval());
+   item.put("id",p.getId());item.put("name",p.getName());item.put("type",p.getType());item.put("category",p.getCategory());item.put("description",p.getDescription());item.put("requiresApproval",p.isRequiresApproval());
    if(!teller)item.put("interestRate",p.getInterestRate());
    return item;
   }).toList();
@@ -30,7 +30,7 @@ public class BankProductController {
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   if(products.findById(r.id()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Product id already exists");
   BankProduct p=new BankProduct(r.id(),r.name(),r.type(),r.description(),r.interestRate(),Boolean.TRUE.equals(r.requiresApproval()));products.save(p);
-  audit.record("PRODUCT_CREATED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),p.getId(),Map.of("type",p.getType().name(),"requiresApproval",p.isRequiresApproval()));
-  return Map.of("id",p.getId(),"name",p.getName(),"type",p.getType(),"requiresApproval",p.isRequiresApproval(),"active",p.isActive());
+  audit.record("PRODUCT_CREATED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),p.getId(),Map.of("type",p.getType().name(),"category",p.getCategory(),"requiresApproval",p.isRequiresApproval()));
+  return Map.of("id",p.getId(),"name",p.getName(),"type",p.getType(),"category",p.getCategory(),"requiresApproval",p.isRequiresApproval(),"active",p.isActive());
  }
 }
