@@ -127,7 +127,9 @@ class SecurityApiIntegrationTest {
     void onlyAdministratorCanCreateAndDeactivatePersistentUsers() throws Exception {
         String body = """
             {"username":"api-managed-teller","password":"New-Strong-Password-123",
-             "role":"TELLER","relatedEntityId":"TELLER-TEST","companyId":null}
+             "role":"TELLER","relatedEntityId":"TELLER-TEST","companyId":null,
+             "fullName":"Demo Teller","identification":"ID-TELLER-77","email":"teller77@example.test",
+             "phone":"3001234577","birthDate":"1990-01-01","address":"Test address"}
             """;
 
         mvc.perform(post("/api/admin/users")
@@ -158,7 +160,9 @@ class SecurityApiIntegrationTest {
 
         String employeeBody = """
             {"username":"commercial-assigned-77","password":"Commercial-Password-123",
-             "role":"COMMERCIAL_EMPLOYEE","relatedEntityId":"STAFF-77","companyId":null}
+             "role":"COMMERCIAL_EMPLOYEE","relatedEntityId":"STAFF-77","companyId":null,
+             "fullName":"Commercial Employee","identification":"ID-COMM-77","email":"commercial77@example.test",
+             "phone":"3001234578","birthDate":"1990-01-01","address":"Test address"}
             """;
         mvc.perform(post("/api/admin/users")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123"))
