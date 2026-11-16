@@ -11,6 +11,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Past;
+import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,14 +45,24 @@ public class BankUserController {
         @NotBlank @Size(min = 12, max = 100) String password,
         @NotNull Role role,
         @NotBlank @Size(max = 100) String relatedEntityId,
-        @Size(max = 100) String companyId
+        @Size(max = 100) String companyId,
+        @NotBlank @Size(max = 160) String fullName,
+        @NotBlank @Size(max = 80) String identification,
+        @NotBlank @Email @Size(max = 180) String email,
+        @NotBlank @Pattern(regexp = "\\d{7,15}") String phone,
+        @NotNull @Past LocalDate birthDate,
+        @NotBlank @Size(max = 300) String address
     ) {}
 
     public record UserResponse(String username, String role, String relatedEntityId,
-                               String companyId, boolean enabled) {
+                               String companyId, String fullName, String identification,
+                               String email, String phone, LocalDate birthDate, String address,
+                               boolean enabled) {
         static UserResponse from(BankUserEntity user) {
             return new UserResponse(user.getUsername(), user.getRole(),
-                user.getRelatedEntityId(), user.getCompanyId(), user.isEnabled());
+                user.getRelatedEntityId(), user.getCompanyId(), user.getFullName(),
+                user.getIdentification(), user.getEmailAddress(), user.getPhoneNumber(),
+                user.getBirthDate(), user.getAddress(), user.isEnabled());
         }
     }
 
@@ -98,9 +112,14 @@ public class BankUserController {
                 "Only business roles may have a company scope");
         }
 
+        if (role == Role.NATURAL_PERSON_CUSTOMER
+                && request.birthDate().isAfter(java.time.LocalDate.now().minusYears(18))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Natural-person customers must be at least 18 years old");
+        }
         BankUserEntity user = new BankUserEntity(request.username(),
             passwords.encode(request.password()), role.name(), request.relatedEntityId(),
-            companyId, true);
+            companyId, true, request.fullName(), request.identification(), request.email(),
+            request.phone(), request.birthDate(), request.address());
         return UserResponse.from(users.save(user));
     }
 
