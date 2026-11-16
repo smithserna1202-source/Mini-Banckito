@@ -30,7 +30,7 @@ public class CustomerController {
  }
  @GetMapping("/{id}") public Map<String,Object> get(@PathVariable String id,Authentication actor){
   Role role=AuthenticatedActor.role(actor);String requester=AuthenticatedActor.id(actor);
-  if(!requester.equals(id)&&role!=Role.ADMINISTRATOR&&role!=Role.COMMERCIAL_EMPLOYEE)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You may only view your own profile");
+  if(!requester.equals(id)&&role!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Customer is not assigned to this user");
   Customer c=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
   return Map.of("id",c.getId(),"name",c.getName(),"email",c.getEmail().getValue(),"identification",c.getIdentification(),"active",c.isActive());
  }
