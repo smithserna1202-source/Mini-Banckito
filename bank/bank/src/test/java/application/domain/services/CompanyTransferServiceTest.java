@@ -118,4 +118,33 @@ class CompanyTransferServiceTest {
         assertEquals(2, service.findPendingForCompany(null).size());
     }
 
+    @Test
+    void batchPaymentsExecuteAllValidatedLowValueTransfers() {
+        var created = service.createBatch("COMPANY001", "4000000001", java.util.List.of(
+            new CompanyTransferService.PaymentInstruction("4000000002", Money.of("100000.00")),
+            new CompanyTransferService.PaymentInstruction("4000000002", Money.of("200000.00"))
+        ), "company-operator", Role.COMPANY_OPERATIONS_EMPLOYEE);
+
+        assertEquals(2, created.size());
+        assertTrue(created.stream().allMatch(t -> t.getStatus() == TransferStatus.EXECUTED));
+        assertEquals(Money.of("9700000.00"),
+            accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
+        assertEquals(Money.of("300000.00"),
+            accounts.findByAccountNumber("4000000002").orElseThrow().getBalance());
+    }
+
+    @Test
+    void batchPaymentsAreRejectedBeforeExecutionWhenImmediateTotalExceedsBalance() {
+        assertThrows(IllegalStateException.class, () -> service.createBatch("COMPANY001",
+            "4000000001", java.util.List.of(
+                new CompanyTransferService.PaymentInstruction("4000000002", Money.of("4000000.00")),
+                new CompanyTransferService.PaymentInstruction("4000000002", Money.of("4000000.00")),
+                new CompanyTransferService.PaymentInstruction("4000000002", Money.of("4000000.00"))
+            ), "company-operator", Role.COMPANY_OPERATIONS_EMPLOYEE));
+
+        assertTrue(transfers.findAll().isEmpty());
+        assertEquals(Money.of("10000000.00"),
+            accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
+    }
+
 }
