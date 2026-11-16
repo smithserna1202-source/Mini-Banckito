@@ -191,6 +191,28 @@ class SecurityApiIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON).content(fundedAccountRequest))
             .andExpect(status().isForbidden());
 
+        String loanRequest = """
+            {"id":"loan-assigned-77","type":"PERSONAL","amount":1000,
+             "termMonths":12,"destinationAccount":"7000000077","applicantId":"CUSTOMER-ASSIGNED-77"}
+            """;
+        mvc.perform(post("/api/loans")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(loanRequest))
+            .andExpect(status().isOk());
+
+        mvc.perform(get("/api/loans/loan-assigned-77")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
+            .andExpect(status().isOk());
+
+        String unassignedLoanRequest = """
+            {"id":"loan-unassigned-77","type":"PERSONAL","amount":1000,
+             "termMonths":12,"destinationAccount":"7000000077","applicantId":"C001"}
+            """;
+        mvc.perform(post("/api/loans")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(unassignedLoanRequest))
+            .andExpect(status().isForbidden());
+
         mvc.perform(get("/api/customers/C001")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isForbidden());
