@@ -91,6 +91,12 @@ La aplicación usa HTTP Basic, BCrypt y autoridades definidas en el servidor. Lo
 
 Todos utilizan `BANK_DEFAULT_PASSWORD`, salvo que se definan contraseñas individuales con variables `BANK_PASSWORD_NATURAL_CUSTOMER`, `BANK_PASSWORD_COMPANY_CUSTOMER`, `BANK_PASSWORD_TELLER`, `BANK_PASSWORD_COMMERCIAL`, `BANK_PASSWORD_COMPANY_OPERATOR`, `BANK_PASSWORD_COMPANY_SUPERVISOR`, `BANK_PASSWORD_ANALYST` y `BANK_PASSWORD_ADMINISTRATOR`. No reutilices contraseñas reales.
 
+Para asociar los usuarios empresariales a una compañía concreta, configura también
+`BANK_COMPANY_ID_COMPANY_CUSTOMER`, `BANK_COMPANY_ID_COMPANY_OPERATOR` y
+`BANK_COMPANY_ID_COMPANY_SUPERVISOR`. En el entorno académico los tres valores
+inician como `COMPANY001`; cámbialos por el identificador real de cada empresa
+de prueba si trabajas con más de una compañía.
+
 Ejemplo de consulta autenticada:
 ```bash
 curl -u C001:$BANK_DEFAULT_PASSWORD http://localhost:8080/api/customers/C001
