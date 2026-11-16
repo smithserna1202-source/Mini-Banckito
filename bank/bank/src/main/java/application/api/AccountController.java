@@ -1,5 +1,6 @@
 package application.api;
 import application.domain.enums.AccountType;
+import application.adapters.jpa.SpringDataCommercialCustomerAssignmentRepository;
 import application.domain.enums.Role;
 import application.domain.models.BankAccount;
 import application.domain.ports.BankAccountRepository;
@@ -20,12 +21,17 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 @RestController @RequestMapping("/api/accounts")
 public class AccountController {
- private final BankAccountRepository accounts;private final CreateAccountService create;private final DepositService deposits;private final WithdrawalService withdrawals;private final GetAccountBalanceService balances;private final AuditService audit;private final AuthorizationService auth;private final TransactionRepository transactions;
- public AccountController(BankAccountRepository a,CreateAccountService c,DepositService d,WithdrawalService w,GetAccountBalanceService b,AuditService audit,AuthorizationService auth,TransactionRepository transactions){accounts=a;create=c;deposits=d;withdrawals=w;balances=b;this.audit=audit;this.auth=auth;this.transactions=transactions;}
+ private final BankAccountRepository accounts;private final CreateAccountService create;private final DepositService deposits;private final WithdrawalService withdrawals;private final GetAccountBalanceService balances;private final AuditService audit;private final AuthorizationService auth;private final TransactionRepository transactions;private final SpringDataCommercialCustomerAssignmentRepository assignments;
+ public AccountController(BankAccountRepository a,CreateAccountService c,DepositService d,WithdrawalService w,GetAccountBalanceService b,AuditService audit,AuthorizationService auth,TransactionRepository transactions,SpringDataCommercialCustomerAssignmentRepository assignments){accounts=a;create=c;deposits=d;withdrawals=w;balances=b;this.audit=audit;this.auth=auth;this.transactions=transactions;this.assignments=assignments;}
  public record CreateAccountRequest(@NotBlank String accountNumber,@NotBlank String ownerId,@NotNull AccountType type,@NotNull @DecimalMin("0.00") BigDecimal initialBalance,@Pattern(regexp="[A-Z]{3}") String currency){}
  public record AmountRequest(@NotNull @DecimalMin(value="0.01") BigDecimal amount){}
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateAccountRequest r,Authentication actor){
-  Role role=AuthenticatedActor.role(actor);auth.require(role,AuthorizationService.Action.OPEN_ACCOUNT);
+  Role role=AuthenticatedActor.role(actor);
+  if(role==Role.COMMERCIAL_EMPLOYEE){
+   if(assignments.findByEmployeeUsernameAndCustomerIdAndActiveTrue(AuthenticatedActor.id(actor),r.ownerId()).isEmpty())
+    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Commercial employee may open accounts only for assigned customers");
+   if(r.initialBalance().signum()!=0)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Commercial employee cannot set an opening balance");
+  } else auth.require(role,AuthorizationService.Action.OPEN_ACCOUNT);
   BankAccount a=new BankAccount(new AccountNumber(r.accountNumber()),new Money(r.initialBalance()),r.ownerId(),r.type(),r.currency()==null?"COP":r.currency());
   try{create.createAccount(a);}catch(IllegalArgumentException ex){throw new ResponseStatusException(HttpStatus.CONFLICT,ex.getMessage());}
   audit.record("ACCOUNT_OPENED",AuthenticatedActor.id(actor),role.name(),r.accountNumber(),Map.of("type",r.type().name()));
