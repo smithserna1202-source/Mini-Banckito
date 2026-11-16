@@ -8,7 +8,38 @@ Aplicación académica de gestión bancaria construida con Java 17, Spring Boot 
 - JDK 17
 - Maven 3.8+
 - Git
+- Docker Desktop con Docker Compose (recomendado para MySQL) o MySQL Server 8+
 - Visual Studio Code y la extensión **Extension Pack for Java**
+
+## MySQL local
+
+La aplicación usa MySQL 8 como base de datos relacional predeterminada. Desde la carpeta bank/bank:
+
+1. Copia .env.example como .env y cambia las contraseñas de ejemplo.
+2. Inicia el servidor:
+   ```bash
+   docker compose --env-file .env up -d
+   ```
+3. Exporta las variables para la aplicación (macOS/Linux):
+   ```bash
+   set -a
+   source .env
+   set +a
+   ```
+   En PowerShell, carga las variables equivalentes en el entorno de la terminal antes de iniciar Spring Boot.
+4. Ejecuta la aplicación desde bank/bank con Maven.
+
+También puedes usar una instalación local de MySQL 8. En ese caso configura DB_URL, DB_USERNAME y DB_PASSWORD. La cuenta de la aplicación debe tener permisos sobre la base de datos minibanckito; evita usar root en un entorno real.
+
+Para detener MySQL sin borrar los datos:
+```bash
+docker compose --env-file .env down
+```
+Para borrar también los datos persistidos (acción irreversible):
+```bash
+docker compose --env-file .env down -v
+```
+
 
 ## Abrir en Visual Studio Code
 
@@ -33,7 +64,15 @@ Aplicación académica de gestión bancaria construida con Java 17, Spring Boot 
    ```
 5. Verifica el estado en [http://localhost:8080/api/health](http://localhost:8080/api/health).
 
-Si `mvn` no se reconoce, instala Maven y configura `JAVA_HOME` para que apunte al JDK 17.
+Si mvn no se reconoce, instala Maven y configura JAVA_HOME para que apunte al JDK 17.
+
+## Swagger / OpenAPI
+
+Con la aplicación iniciada, abre:
+- Swagger UI: http://localhost:8080/swagger-ui.html
+- Especificación OpenAPI JSON: http://localhost:8080/v3/api-docs
+
+Swagger UI y la documentación OpenAPI son públicos para facilitar la exploración; las operaciones de negocio siguen protegidas por HTTP Basic. En Swagger UI pulsa **Authorize** e ingresa el usuario y contraseña de demostración para probar endpoints protegidos.
 
 ## Usuarios y roles de demostración
 
@@ -82,8 +121,8 @@ curl -u teller01:$BANK_DEFAULT_PASSWORD -X POST http://localhost:8080/api/accoun
 
 ## Persistencia y límites conocidos
 
-- El perfil predeterminado es `sql`: H2 guarda cuentas, clientes, empresas y productos en un archivo local bajo `bank/bank/data`.
-- Las solicitudes y decisiones de préstamos, cuentas, clientes, empresas, productos y transacciones se guardan en SQL. Las transferencias internas/empresariales, transferencias programadas y bitácora todavía usan adaptadores en memoria; esos datos se pierden al reiniciar.
+- El perfil predeterminado es sql: MySQL 8 guarda los registros relacionales. Hibernate crea/actualiza el esquema automáticamente (ddl-auto=update), por lo que se recomienda respaldar la base de datos antes de actualizar el proyecto.
+- Las solicitudes y decisiones de préstamos, cuentas, clientes, empresas, productos y transacciones se guardan en MySQL. Las transferencias internas/empresariales, transferencias programadas y bitácora todavía usan adaptadores en memoria; esos datos se pierden al reiniciar.
 - La bitácora es de solo anexado desde los servicios de dominio; la persistencia MongoDB requiere configurar y probar el perfil y el servidor Mongo.
 - El vencimiento de transferencias empresariales se revisa automáticamente cada minuto; las transferencias programadas se procesan cada 30 segundos.
 - El servicio interbancario externo rechaza la operación porque no existe integración de liquidación con otra entidad.
@@ -92,10 +131,11 @@ curl -u teller01:$BANK_DEFAULT_PASSWORD -X POST http://localhost:8080/api/accoun
 
 ## Pruebas
 
-Desde `bank/bank`:
+Desde bank/bank:
 ```bash
 mvn clean test
 ```
+Las pruebas automatizadas usan H2 en memoria y no requieren levantar MySQL. El flujo de integración continua también inicia MySQL 8 y comprueba el arranque real de la API contra esa base de datos, además de verificar Swagger.
 Desde la raíz:
 ```bash
 mvn -f bank/bank/pom.xml clean test
