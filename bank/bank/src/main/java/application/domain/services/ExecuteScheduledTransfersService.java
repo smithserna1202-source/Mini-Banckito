@@ -54,7 +54,12 @@ public class ExecuteScheduledTransfersService {
 
         try {
             source.withdraw(transfer.getAmount());
-            target.deposit(transfer.getAmount());
+            try {
+                target.deposit(transfer.getAmount());
+            } catch (RuntimeException destinationFailure) {
+                source.deposit(transfer.getAmount());
+                throw destinationFailure;
+            }
             accounts.save(source);
             accounts.save(target);
             transfer.markExecuted();
