@@ -7,6 +7,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-mysql-password
+          MYSQL_DATABASE: minibanckito
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-mysql-password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -14,21 +27,28 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
-      - name: Run unit tests
+      - name: Run unit and integration tests (H2)
         run: mvn -B -f bank/bank/pom.xml clean test
-      - name: Smoke test Spring Boot API
+      - name: Smoke test Spring Boot API with MySQL
         env:
           BANK_DEFAULT_PASSWORD: "CI-only-password-12345"
+          DB_URL: jdbc:mysql://127.0.0.1:3306/minibanckito?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          DB_USERNAME: root
+          DB_PASSWORD: ci-mysql-password
         run: |
           cd bank/bank
           mvn -B spring-boot:run > app.log 2>&1 &
           APP_PID=$!
           trap 'kill $APP_PID 2>/dev/null || true' EXIT
-          for attempt in {1..45}; do
+          for attempt in {1..60}; do
             if curl --fail --silent http://localhost:8080/api/health; then
-              exit 0
+              break
             fi
             sleep 2
           done
-          cat app.log
-          exit 1
+          if ! curl --fail --silent http://localhost:8080/api/health; then
+            cat app.log
+            exit 1
+          fi
+          curl --fail --silent http://localhost:8080/v3/api-docs > /dev/null
+          curl --fail --silent http://localhost:8080/swagger-ui.html > /dev/null
