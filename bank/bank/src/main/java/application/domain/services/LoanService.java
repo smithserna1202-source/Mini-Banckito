@@ -40,7 +40,7 @@ public class LoanService {
  }
  public void request(Loan loan){
   Objects.requireNonNull(loan);
-  if(products!=null&&products.findAllActive().stream().noneMatch(p->p.getType()==ProductType.LOAN))
+  if(products!=null&&products.findAllActive().stream().noneMatch(p->p.getType()==ProductType.LOAN&&p.isRequiresApproval()))
    throw new IllegalStateException("Loan product is not available in the active product catalog");
   if(customers!=null&&companies!=null){
    boolean activeCustomer=customers.findById(loan.getApplicantId())
