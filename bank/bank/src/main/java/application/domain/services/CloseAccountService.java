@@ -1,2 +1,3 @@
 package application.domain.services;
-public class CloseAccountService {}
+import application.domain.models.BankAccount;
+public class CloseAccountService { public void close(BankAccount account){account.close();} }

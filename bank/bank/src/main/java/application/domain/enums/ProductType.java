@@ -1,0 +1,2 @@
+package application.domain.enums;
+public enum ProductType { SAVINGS_ACCOUNT, CHECKING_ACCOUNT, PERSONAL_ACCOUNT, BUSINESS_ACCOUNT, LOAN, TERM_DEPOSIT, CREDIT_CARD }

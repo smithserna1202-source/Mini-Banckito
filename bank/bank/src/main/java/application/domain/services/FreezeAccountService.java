@@ -1,2 +1,3 @@
 package application.domain.services;
-public class FreezeAccountService {}
+import application.domain.models.BankAccount;
+public class FreezeAccountService { public void freeze(BankAccount account){account.freeze();} }

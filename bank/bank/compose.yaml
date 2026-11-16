@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mini-banckito-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: minibanckito
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-local-root-password-change-me}
+      MYSQL_USER: ${DB_USERNAME:-banckito}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-local-banckito-password-change-me}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - minibanckito_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${DB_ROOT_PASSWORD:-local-root-password-change-me}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongo:
+    image: mongo:7
+    container_name: mini-banckito-mongo
+    restart: unless-stopped
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - minibanckito_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  minibanckito_mysql_data:
+  minibanckito_mongo_data:
