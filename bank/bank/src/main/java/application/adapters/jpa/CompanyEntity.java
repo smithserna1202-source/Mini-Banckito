@@ -7,7 +7,7 @@ public class CompanyEntity {
  @Column(nullable=false) private String legalName;
  @Column(nullable=false,unique=true) private String nit;
  @Column(nullable=false,unique=true) private String email;
- private String phone;
+ @Column(unique=true) private String phone;
  private String address;
  @Column(nullable=false) private String legalRepresentativeId;
  @Column(nullable=false) private boolean active;
