@@ -110,7 +110,8 @@ curl -u C001:$BANK_DEFAULT_PASSWORD http://localhost:8080/api/customers/C001
 - `POST /api/company-transfers`, `POST /api/company-transfers/{id}/approve`, `POST /api/company-transfers/{id}/reject` — transferencias de empresa.
 - `POST /api/scheduled-transfers`, `POST /api/scheduled-transfers/{id}/cancel` — transferencias programadas.
 - `POST /api/loans`, `POST /api/loans/{id}/approve`, `POST /api/loans/{id}/reject`, `POST /api/loans/{id}/disburse` — solicitudes, decisiones y desembolsos de préstamos.
-- `GET /api/audit` — consulta restringida de bitácora.
+- `GET /api/audit` — bitácora completa, solo para analistas internos y administradores.
+- `GET /api/audit/product/{productId}` — historial de auditoría de una cuenta o préstamo propio para clientes.
 
 Ejemplo de apertura de cuenta:
 ```bash
@@ -123,9 +124,9 @@ curl -u teller01:$BANK_DEFAULT_PASSWORD -X POST http://localhost:8080/api/accoun
 
 - Los perfiles predeterminados `sql,mongodb` activan MySQL 8 para clientes, empresas, cuentas, productos, préstamos, transferencias y movimientos; MongoDB 7 guarda la bitácora de auditoría mediante inserciones.
 - Hibernate crea/actualiza el esquema relacional automáticamente (`ddl-auto=update`); respalda la base de datos antes de actualizar el proyecto.
-- Las transferencias empresariales de alto valor requieren aprobación, y las transferencias pendientes vencen después de 60 minutos. Las transferencias programadas se procesan cada 30 segundos.
+- Las transferencias empresariales que superan `BANK_COMPANY_TRANSFER_APPROVAL_THRESHOLD` requieren aprobación, y las transferencias pendientes vencen después de 60 minutos. Las transferencias ejecutadas registran débitos y créditos en el historial SQL. Las transferencias programadas se procesan cada 30 segundos.
 - El servicio interbancario externo rechaza la operación porque no existe integración de liquidación con otra entidad.
-- El validador de límites existe en dominio, pero el acumulado diario aún no está conectado a un historial persistente.
+- El umbral de aprobación de transferencias empresariales es configurable mediante `BANK_COMPANY_TRANSFER_APPROVAL_THRESHOLD` (valor inicial de demostración: 5.000.000). El enunciado académico no fija un importe universal ni define un límite diario; por eso no se inventa un tope diario.
 - Los usuarios/roles de demostración se precargan en memoria; falta gestión completa de credenciales, altas/bajas y asociación persistente entre empleados, clientes y empresas.
 - La configuración de seguridad es demostrativa para uso académico, no apta para producción bancaria.
 
