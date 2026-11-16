@@ -29,9 +29,11 @@ public class TransferController {
   String requester=AuthenticatedActor.id(actor);BankAccount source=find(r.sourceAccount()),target=find(r.destinationAccount());
   if(!source.getOwnerId().equals(requester))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Requester does not own the source account");
   Money amount=Money.of(r.amount().toPlainString());transfers.transfer(source,target,amount);accounts.save(source);accounts.save(target);
-  transactions.save(new Transaction(UUID.randomUUID().toString(),r.sourceAccount(),amount,TransactionType.TRANSFER));
-  transactions.save(new Transaction(UUID.randomUUID().toString(),r.destinationAccount(),amount,TransactionType.TRANSFER));
-  audit.record("INTERNAL_TRANSFER",requester,role.name(),r.sourceAccount(),Map.of("destination",r.destinationAccount(),"amount",amount.toString()));
+  transactions.save(new Transaction(UUID.randomUUID().toString(),r.sourceAccount(),amount,TransactionType.DEBIT_TRANSFER));
+  transactions.save(new Transaction(UUID.randomUUID().toString(),r.destinationAccount(),amount,TransactionType.CREDIT_TRANSFER));
+  audit.record("INTERNAL_TRANSFER",requester,role.name(),r.sourceAccount(),Map.of(
+   "destination",r.destinationAccount(),"amount",amount.toString(),
+   "sourceBalanceAfter",source.getBalance().toString(),"destinationBalanceAfter",target.getBalance().toString()));
   return Map.of("status","EXECUTED","sourceBalance",source.getBalance().toString(),"destinationBalance",target.getBalance().toString());
  }
  @GetMapping("/history/{accountNumber}") public List<Map<String,Object>> history(@PathVariable String accountNumber,Authentication actor){
