@@ -58,17 +58,20 @@ public class LoanService {
   audit.record("LOAN_REQUESTED",loan.getApplicantId(),"CUSTOMER",loan.getId(),Map.of("amount",loan.getRequestedAmount().toString()));
  }
  public void approve(String loanId,String analystId,Role role,Money amount,BigDecimal rate){
+  if(role!=Role.INTERNAL_ANALYST)throw new SecurityException("Only an internal analyst may approve loans");
   authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
   loan.approve(analystId,amount,rate);loans.save(loan);
   audit.record("LOAN_APPROVED",analystId,role.name(),loanId,Map.of("amount",amount.toString(),"rate",rate.toPlainString()));
  }
  public void reject(String loanId,String analystId,Role role){
+  if(role!=Role.INTERNAL_ANALYST)throw new SecurityException("Only an internal analyst may reject loans");
   authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
   loan.reject(analystId);loans.save(loan);audit.record("LOAN_REJECTED",analystId,role.name(),loanId,Map.of());
  }
  public void disburse(String loanId,String analystId,Role role){
+  if(role!=Role.INTERNAL_ANALYST)throw new SecurityException("Only an internal analyst may disburse loans");
   authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
   if(loan.getStatus()!=LoanStatus.APPROVED||loan.getApprovedAmount()==null||!loan.getApprovedAmount().isPositive())
