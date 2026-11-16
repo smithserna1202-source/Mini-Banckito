@@ -40,6 +40,7 @@ class SecurityApiIntegrationTest {
     @Autowired private BankAccountRepository accounts;
     @Autowired private AuditLogRepository audit;
     @Autowired private CustomerRepository customers;
+    @Autowired private application.domain.ports.CompanyRepository companies;
     @Autowired private SpringDataBankUserRepository bankUsers;
     @Autowired private JpaBankUserDetailsService bankUserDetails;
     @Autowired private PasswordEncoder passwordEncoder;
@@ -220,6 +221,31 @@ class SecurityApiIntegrationTest {
         mvc.perform(get("/api/customers/C001")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void companyManagerCanManageOnlyOperationalUsersWithinItsCompany() throws Exception {
+        companies.save(new application.domain.models.Company("COMPANY001", "Test Company",
+            "900123456-7", new application.domain.valueobjects.Email("company001@example.test"),
+            new application.domain.valueobjects.PhoneNumber("3001234580"), "Company address", "C001"));
+
+        String body = """
+            {"username":"company-operator-managed","password":"Company-User-Password-123",
+             "role":"COMPANY_OPERATIONS_EMPLOYEE","relatedEntityId":"COMPANY001","companyId":"COMPANY001",
+             "fullName":"Company Operator","identification":"ID-COMP-OP-77","email":"companyop77@example.test",
+             "phone":"3001234581","birthDate":"1990-01-01","address":"Company address"}
+            """;
+        mvc.perform(post("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("COMPANY001", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isCreated());
+
+        mvc.perform(post("/api/admin/users/company-operator-managed/deactivate")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("COMPANY001", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+
+        assertThrows(UsernameNotFoundException.class,
+            () -> bankUserDetails.loadUserByUsername("company-operator-managed"));
     }
 
 }
