@@ -40,7 +40,7 @@ public class TransferController {
  }
  @GetMapping("/history/{accountNumber}") public List<Map<String,Object>> history(@PathVariable String accountNumber,Authentication actor){
   BankAccount account=find(accountNumber);Role role=AuthenticatedActor.role(actor);String requester=AuthenticatedActor.id(actor);
-  if(role==Role.TELLER||role==Role.ADMINISTRATOR)auth.require(role,AuthorizationService.Action.VIEW_ACCOUNT_STATUS);
+  if(role==Role.TELLER||role==Role.ADMINISTRATOR||role==Role.INTERNAL_ANALYST)auth.require(role,AuthorizationService.Action.VIEW_ACCOUNT_STATUS);
   else if(role==Role.COMPANY_CUSTOMER||role==Role.COMPANY_OPERATIONS_EMPLOYEE||role==Role.COMPANY_SUPERVISOR){
    if(!account.getOwnerId().equals(AuthenticatedActor.companyId(actor)))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Account belongs to another company");
   } else if(!account.getOwnerId().equals(requester))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You may only view your own account history");
