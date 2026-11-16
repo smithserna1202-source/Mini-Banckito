@@ -61,7 +61,7 @@ class CompanyTransferServiceTest {
         assertEquals(Money.of("10000000.00"), accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
         assertEquals(Money.of("0.00"), accounts.findByAccountNumber("4000000002").orElseThrow().getBalance());
 
-        service.approve(transfer.getId(), "supervisor01", Role.COMPANY_SUPERVISOR);
+        service.approve(transfer.getId(), "supervisor01", Role.COMPANY_SUPERVISOR, "COMPANY001");
 
         assertEquals(TransferStatus.EXECUTED, transfers.findById(transfer.getId()).orElseThrow().getStatus());
         assertEquals(Money.of("4000000.00"), accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
