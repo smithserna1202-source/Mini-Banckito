@@ -30,6 +30,7 @@ public class ScheduleTransferService {
         return schedule(source, destination, amount, at, creatorId, creatorId, role);
     }
 
+    @Transactional
     public ScheduledTransfer schedule(String source, String destination, Money amount, Instant at,
                                       String ownerId, String creatorId, String role) {
         BankAccount from = accounts.findByAccountNumber(source)
