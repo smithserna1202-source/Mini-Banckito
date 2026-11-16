@@ -12,6 +12,6 @@ public class TransactionJpaAdapter implements TransactionRepository {
  @Override public void save(Transaction transaction){repository.save(new TransactionEntity(transaction));}
  @Override public List<Transaction> findByAccountId(String accountId){
   return repository.findByAccountIdOrderByCreatedAtDesc(accountId).stream()
-   .map(e->new Transaction(e.getId(),e.getAccountId(),new Money(e.getAmount()),e.getType())).toList();
+   .map(e->new Transaction(e.getId(),e.getAccountId(),new Money(e.getAmount()),e.getType(),e.getCreatedAt())).toList();
  }
 }
