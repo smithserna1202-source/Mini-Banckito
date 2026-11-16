@@ -24,8 +24,8 @@ public class CustomerController {
   Customer c=new Customer(id,r.name(),r.identification(),new application.domain.valueobjects.Email(r.email()),new PhoneNumber(r.phone()),r.address(),r.birthDate(),true);
   if(customers.findById(id).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Customer id already exists");
   if(customers.findByIdentification(r.identification()).isPresent()||companies.findByNit(r.identification()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Identification already exists in the bank");
-  if(customers.findByEmail(r.email()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Email already exists");
-  if(customers.findByPhone(r.phone()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Phone number already exists");
+  if(customers.findByEmail(r.email()).isPresent()||companies.findByEmail(r.email()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Email already exists");
+  if(customers.findByPhone(r.phone()).isPresent()||companies.findByPhone(r.phone()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Phone number already exists");
   customers.save(c);audit.record("CUSTOMER_REGISTERED",id,role.name(),id,Map.of("identification",r.identification()));
   return Map.of("id",c.getId(),"name",c.getName(),"email",c.getEmail().getValue(),"active",c.isActive());
  }
