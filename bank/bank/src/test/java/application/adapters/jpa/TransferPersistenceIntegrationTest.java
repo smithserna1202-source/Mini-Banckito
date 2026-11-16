@@ -9,8 +9,8 @@ import application.domain.ports.BankTransferRepository;
 import application.domain.ports.ScheduledTransferRepository;
 import application.domain.valueobjects.AccountNumber;
 import application.domain.valueobjects.Money;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,8 +38,7 @@ class TransferPersistenceIntegrationTest {
         assertEquals(TransferStatus.APPROVED, restored.getStatus());
         assertEquals(original.getAmount(), restored.getAmount());
         assertEquals("supervisor01", restored.getApproverUserId());
-        assertEquals(original.getCreatedAt().truncatedTo(ChronoUnit.MILLIS),
-            restored.getCreatedAt().truncatedTo(ChronoUnit.MILLIS));
+        assertInstantsClose(original.getCreatedAt(), restored.getCreatedAt());
     }
 
     @Test
@@ -53,10 +52,13 @@ class TransferPersistenceIntegrationTest {
         ScheduledTransfer restored = scheduledTransfers.findById(original.getId()).orElseThrow();
         assertEquals(ScheduledTransfer.Status.SCHEDULED, restored.getStatus());
         assertEquals(original.getAmount(), restored.getAmount());
-        assertEquals(original.getScheduledAt().truncatedTo(ChronoUnit.MICROS),
-            restored.getScheduledAt().truncatedTo(ChronoUnit.MICROS));
-        assertEquals(original.getCreatedAt().truncatedTo(ChronoUnit.MILLIS),
-            restored.getCreatedAt().truncatedTo(ChronoUnit.MILLIS));
+        assertInstantsClose(original.getScheduledAt(), restored.getScheduledAt());
+        assertInstantsClose(original.getCreatedAt(), restored.getCreatedAt());
         assertEquals(original.getCreatorId(), restored.getCreatorId());
+    }
+
+    private static void assertInstantsClose(Instant expected, Instant actual) {
+        assertTrue(Duration.between(expected, actual).abs().compareTo(Duration.ofMillis(1)) <= 0,
+            () -> "Expected timestamps within 1 ms, but were " + expected + " and " + actual);
     }
 }
