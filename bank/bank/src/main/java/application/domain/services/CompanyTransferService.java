@@ -45,6 +45,18 @@ public class CompanyTransferService {
         this.transactions = transactions;
     }
 
+
+    public java.util.List<BankTransfer> findPendingForCompany(String companyId) {
+        return transfers.findAll().stream()
+            .filter(transfer -> transfer.getStatus() == TransferStatus.PENDING_APPROVAL)
+            .filter(transfer -> {
+                if (companyId == null) return true;
+                BankAccount source = accounts.findByAccountNumber(transfer.getSourceAccount()).orElse(null);
+                return source != null && companyId.equals(source.getOwnerId());
+            })
+            .toList();
+    }
+
     @Transactional
     public BankTransfer create(String companyId, String sourceId, String destinationId,
                                Money amount, String userId, Role role) {
