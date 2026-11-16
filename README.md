@@ -107,9 +107,11 @@ curl -u C001:$BANK_DEFAULT_PASSWORD http://localhost:8080/api/customers/C001
 Al iniciar por primera vez, la aplicación crea usuarios de demostración en la tabla `bank_users` usando `BANK_DEFAULT_PASSWORD` o las contraseñas individuales configuradas. No sobrescribe usuarios existentes.
 
 El rol `ADMINISTRATOR` puede gestionar todos los usuarios. Los roles `COMPANY_CUSTOMER` y `COMPANY_SUPERVISOR` pueden crear y desactivar únicamente usuarios operativos de su propia empresa. Las altas requieren nombre, identificación, correo, teléfono, fecha de nacimiento, dirección, rol y entidad relacionada. Las operaciones disponibles son:
+- `GET /api/admin/users` — listar usuarios; los administradores ven todos y los responsables de empresa solo ven sus empleados operativos.
 - `POST /api/admin/users` — crear un usuario con nombre, contraseña (mínimo 12 caracteres), rol y entidad asociada.
 - `POST /api/admin/users/{username}/deactivate` y `POST /api/admin/users/{username}/activate` — desactivar o reactivar usuarios; para clientes naturales y empresas, el estado del perfil se sincroniza con el estado de acceso.
 - `POST /api/admin/users/{username}/customers/{customerId}` — asignar un cliente activo a un empleado comercial.
+- `DELETE /api/admin/users/{username}/customers/{customerId}` — revocar una asignación comercial activa.
 
 El empleado comercial solo puede consultar los perfiles que tenga asignados.
 
