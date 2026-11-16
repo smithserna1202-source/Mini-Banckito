@@ -295,4 +295,30 @@ class SecurityApiIntegrationTest {
             .andExpect(status().isOk());
     }
 
+    @Test
+    void companyOperatorCanSubmitBatchPaymentsFromItsOwnAccount() throws Exception {
+        accounts.save(new BankAccount(new AccountNumber("8000000081"), Money.of("1000000"),
+            "COMPANY001", AccountType.CHECKING, "COP"));
+        accounts.save(new BankAccount(new AccountNumber("8000000082"), Money.zero(),
+            "PAYEE001", AccountType.SAVINGS, "COP"));
+        accounts.save(new BankAccount(new AccountNumber("8000000083"), Money.zero(),
+            "PAYEE002", AccountType.SAVINGS, "COP"));
+
+        String body = """
+            {"sourceAccount":"8000000081","payments":[
+              {"destinationAccount":"8000000082","amount":100},
+              {"destinationAccount":"8000000083","amount":200}
+            ]}
+            """;
+        mvc.perform(post("/api/company-transfers/batch")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("company-operator", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isOk());
+
+        assertEquals(Money.of("999700"),
+            accounts.findByAccountNumber("8000000081").orElseThrow().getBalance());
+        assertEquals(Money.of("100"), accounts.findByAccountNumber("8000000082").orElseThrow().getBalance());
+        assertEquals(Money.of("200"), accounts.findByAccountNumber("8000000083").orElseThrow().getBalance());
+    }
+
 }
