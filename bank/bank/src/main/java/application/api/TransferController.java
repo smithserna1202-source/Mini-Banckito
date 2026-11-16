@@ -39,7 +39,9 @@ public class TransferController {
  @GetMapping("/history/{accountNumber}") public List<Map<String,Object>> history(@PathVariable String accountNumber,Authentication actor){
   BankAccount account=find(accountNumber);Role role=AuthenticatedActor.role(actor);String requester=AuthenticatedActor.id(actor);
   if(role==Role.TELLER||role==Role.ADMINISTRATOR)auth.require(role,AuthorizationService.Action.VIEW_ACCOUNT_STATUS);
-  else if(!account.getOwnerId().equals(requester))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You may only view your own account history");
+  else if(role==Role.COMPANY_CUSTOMER||role==Role.COMPANY_OPERATIONS_EMPLOYEE||role==Role.COMPANY_SUPERVISOR){
+   if(!account.getOwnerId().equals(AuthenticatedActor.companyId(actor)))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Account belongs to another company");
+  } else if(!account.getOwnerId().equals(requester))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You may only view your own account history");
   return transactions.findByAccountId(accountNumber).stream().map(t->Map.<String,Object>of("id",t.getId(),"type",t.getType().name(),"amount",t.getAmount().toString(),"account",t.getAccountId())).toList();
  }
  private BankAccount find(String n){return accounts.findByAccountNumber(n).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Account not found: "+n));}
