@@ -1,5 +1,6 @@
 package application.api;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import application.domain.models.AuditLogEntry;
 import application.domain.ports.AuditLogRepository;
 import application.domain.ports.BankAccountRepository;
+import application.domain.ports.CustomerRepository;
 import application.domain.models.BankAccount;
 import application.domain.valueobjects.AccountNumber;
 import application.domain.valueobjects.Money;
@@ -37,6 +39,7 @@ class SecurityApiIntegrationTest {
     @Autowired private MockMvc mvc;
     @Autowired private BankAccountRepository accounts;
     @Autowired private AuditLogRepository audit;
+    @Autowired private CustomerRepository customers;
     @Autowired private SpringDataBankUserRepository bankUsers;
     @Autowired private JpaBankUserDetailsService bankUserDetails;
     @Autowired private PasswordEncoder passwordEncoder;
@@ -163,15 +166,15 @@ class SecurityApiIntegrationTest {
             .andExpect(status().isCreated());
 
         mvc.perform(post("/api/admin/users/commercial-assigned-77/customers/" + customerId)
-            .with(SecurityMockMvcPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
             .andExpect(status().isCreated());
 
         mvc.perform(get("/api/customers/" + customerId)
-            .with(SecurityMockMvcPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isOk());
 
         mvc.perform(get("/api/customers/C001")
-            .with(SecurityMockMvcPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isForbidden());
     }
 
