@@ -145,4 +145,34 @@ class SecurityApiIntegrationTest {
             () -> bankUserDetails.loadUserByUsername("api-managed-teller"));
     }
 
+    @Test
+    void commercialEmployeeCanOnlyReadCustomersAssignedByAdministrator() throws Exception {
+        String customerId = "CUSTOMER-ASSIGNED-77";
+        customers.save(new application.domain.models.Customer(customerId, "Assigned Customer",
+            "ID-ASSIGNED-77", new application.domain.valueobjects.Email("assigned77@example.test"),
+            new application.domain.valueobjects.PhoneNumber("3001234567"), "Test address",
+            java.time.LocalDate.of(1990, 1, 1), true));
+
+        String employeeBody = """
+            {"username":"commercial-assigned-77","password":"Commercial-Password-123",
+             "role":"COMMERCIAL_EMPLOYEE","relatedEntityId":"STAFF-77","companyId":null}
+            """;
+        mvc.perform(post("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(employeeBody))
+            .andExpect(status().isCreated());
+
+        mvc.perform(post("/api/admin/users/commercial-assigned-77/customers/" + customerId)
+            .with(SecurityMockMvcPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isCreated());
+
+        mvc.perform(get("/api/customers/" + customerId)
+            .with(SecurityMockMvcPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
+            .andExpect(status().isOk());
+
+        mvc.perform(get("/api/customers/C001")
+            .with(SecurityMockMvcPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
+            .andExpect(status().isForbidden());
+    }
+
 }
