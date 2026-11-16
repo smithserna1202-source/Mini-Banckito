@@ -3,6 +3,7 @@ import application.domain.models.Loan;
 import application.domain.ports.LoanRepository;
 import application.domain.valueobjects.Money;
 import java.util.Optional;
+import java.util.List;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 @Repository @Profile("sql")
@@ -11,6 +12,7 @@ public class LoanJpaAdapter implements LoanRepository {
  public LoanJpaAdapter(SpringDataLoanRepository repository){this.repository=repository;}
  @Override public void save(Loan loan){repository.save(new LoanEntity(loan));}
  @Override public Optional<Loan> findById(String id){return repository.findById(id).map(this::toDomain);}
+ @Override public List<Loan> findAll(){return repository.findAll().stream().map(this::toDomain).toList();}
  private Loan toDomain(LoanEntity e){
   return Loan.restore(e.getId(),e.getApplicantId(),e.getLoanType(),
    new Money(e.getRequestedAmount()),e.getTermMonths(),e.getDestinationAccount(),
