@@ -2,6 +2,7 @@ package application.api;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -153,6 +154,19 @@ class SecurityApiIntegrationTest {
     }
 
     @Test
+    void userAdministrationListingIsRestrictedAndCompanyScoped() throws Exception {
+        String adminUsers = mvc.perform(get("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(adminUsers.contains("natural-customer"));
+        assertTrue(adminUsers.contains("company-operator"));
+
+        mvc.perform(get("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void commercialEmployeeCanOnlyReadCustomersAssignedByAdministrator() throws Exception {
         String customerId = "CUSTOMER-ASSIGNED-77";
         customers.save(new application.domain.models.Customer(customerId, "Assigned Customer",
@@ -178,6 +192,14 @@ class SecurityApiIntegrationTest {
         mvc.perform(get("/api/customers/" + customerId)
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isOk());
+
+        mvc.perform(delete("/api/admin/users/commercial-assigned-77/customers/" + customerId)
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/customers/" + customerId)
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
+            .andExpect(status().isForbidden());
 
         String accountRequest = """
             {"accountNumber":"7000000077","ownerId":"CUSTOMER-ASSIGNED-77",
