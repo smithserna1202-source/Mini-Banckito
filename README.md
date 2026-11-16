@@ -111,7 +111,7 @@ curl -u C001:$BANK_DEFAULT_PASSWORD http://localhost:8080/api/customers/C001
 - `POST /api/scheduled-transfers`, `POST /api/scheduled-transfers/{id}/cancel` — transferencias programadas.
 - `POST /api/loans`, `POST /api/loans/{id}/approve`, `POST /api/loans/{id}/reject`, `POST /api/loans/{id}/disburse` — solicitudes, decisiones y desembolsos de préstamos.
 - `GET /api/audit` — bitácora completa, solo para analistas internos y administradores.
-- `GET /api/audit/product/{productId}` — historial de auditoría de una cuenta o préstamo propio para clientes.
+- `GET /api/audit/product/{productId}` — historial de auditoría de una cuenta, préstamo o transferencia que involucre productos propios o de la empresa.
 
 Ejemplo de apertura de cuenta:
 ```bash
