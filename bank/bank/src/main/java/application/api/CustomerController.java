@@ -13,10 +13,12 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 @RestController @RequestMapping("/api/customers")
 public class CustomerController {
 
+ @Transactional
  @PostMapping("/{id}/deactivate") public Map<String,Object> deactivate(@PathVariable String id,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   Customer entity=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
@@ -24,6 +26,7 @@ public class CustomerController {
   audit.record("CUSTOMER_DEACTIVATED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),id,Map.of());
   return Map.of("id",id,"active",entity.isActive(),"blocked",entity.isBlocked());
  }
+ @Transactional
  @PostMapping("/{id}/activate") public Map<String,Object> activate(@PathVariable String id,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   Customer entity=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
@@ -31,6 +34,7 @@ public class CustomerController {
   audit.record("CUSTOMER_ACTIVATED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),id,Map.of());
   return Map.of("id",id,"active",entity.isActive(),"blocked",entity.isBlocked());
  }
+ @Transactional
  @PostMapping("/{id}/block") public Map<String,Object> block(@PathVariable String id,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   Customer customer=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
@@ -38,6 +42,7 @@ public class CustomerController {
   audit.record("CUSTOMER_BLOCKED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),id,Map.of());
   return Map.of("id",id,"active",customer.isActive(),"blocked",customer.isBlocked());
  }
+ @Transactional
  @PostMapping("/{id}/unblock") public Map<String,Object> unblock(@PathVariable String id,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   Customer customer=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
@@ -48,6 +53,7 @@ public class CustomerController {
  private final CustomerRepository customers;private final CompanyRepository companies;private final AuditService audit;private final SpringDataCommercialCustomerAssignmentRepository assignments;
  public CustomerController(CustomerRepository c,CompanyRepository companies,AuditService a,SpringDataCommercialCustomerAssignmentRepository assignments){customers=c;this.companies=companies;audit=a;this.assignments=assignments;}
  public record CreateCustomerRequest(@NotBlank String name,@NotBlank String identification,@NotBlank @jakarta.validation.constraints.Email String email,@NotBlank @Pattern(regexp="\\d{7,15}") String phone,@NotNull LocalDate birthDate,@NotBlank String address,String customerId){}
+ @Transactional
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateCustomerRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);
   if(role!=Role.ADMINISTRATOR&&role!=Role.TELLER&&role!=Role.NATURAL_PERSON_CUSTOMER)
