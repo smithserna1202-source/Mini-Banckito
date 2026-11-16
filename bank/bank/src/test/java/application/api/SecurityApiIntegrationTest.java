@@ -170,6 +170,15 @@ class SecurityApiIntegrationTest {
         mvc.perform(get("/api/admin/users")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123")))
             .andExpect(status().isForbidden());
+
+        bankUsers.save(new BankUserEntity("other-company-operator",
+            passwordEncoder.encode("Other-Company-Password-123"), "COMPANY_OPERATIONS_EMPLOYEE",
+            "COMPANY002", "COMPANY002", true));
+        String companyUsers = mvc.perform(get("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("COMPANY001", "Integration-Only-Password-123")))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(companyUsers.contains("company-operator"));
+        assertFalse(companyUsers.contains("other-company-operator"));
     }
 
     @Test
