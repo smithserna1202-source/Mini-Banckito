@@ -42,7 +42,8 @@ public class LoanService {
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
   loan.reject(analystId);loans.save(loan);audit.record("LOAN_REJECTED",analystId,role.name(),loanId,Map.of());
  }
- public void disburse(String loanId){
+ public void disburse(String loanId,String analystId,Role role){
+  authorization.require(role,AuthorizationService.Action.APPROVE_LOAN);
   Loan loan=loans.findById(loanId).orElseThrow(()->new IllegalArgumentException("Loan not found"));
   if(loan.getStatus()!=LoanStatus.APPROVED||loan.getApprovedAmount()==null||!loan.getApprovedAmount().isPositive())
    throw new IllegalStateException("Only an approved loan with a positive approved amount can be disbursed");
@@ -52,6 +53,6 @@ public class LoanService {
   account.deposit(loan.getApprovedAmount());
   loan.markDisbursed();
   accounts.save(account);loans.save(loan);
-  audit.record("LOAN_DISBURSED","SYSTEM","SYSTEM",loanId,Map.of("amount",loan.getApprovedAmount().toString(),"account",account.getAccountNumber().getValue()));
+  audit.record("LOAN_DISBURSED",analystId,role.name(),loanId,Map.of("amount",loan.getApprovedAmount().toString(),"account",account.getAccountNumber().getValue()));
  }
 }
