@@ -15,7 +15,7 @@ public class AuthorizationService {
   PERMISSIONS.put(Role.COMMERCIAL_EMPLOYEE,EnumSet.of(Action.MANAGE_ASSIGNED_CUSTOMERS,Action.REQUEST_PRODUCT));
   PERMISSIONS.put(Role.COMPANY_OPERATIONS_EMPLOYEE,EnumSet.of(Action.COMPANY_PAYMENT,Action.REQUEST_TRANSFER));
   PERMISSIONS.put(Role.COMPANY_SUPERVISOR,EnumSet.of(Action.APPROVE_HIGH_VALUE_TRANSFER));
-  PERMISSIONS.put(Role.INTERNAL_ANALYST,EnumSet.of(Action.APPROVE_LOAN,Action.VIEW_AUDIT_LOG));
+  PERMISSIONS.put(Role.INTERNAL_ANALYST,EnumSet.of(Action.APPROVE_LOAN,Action.VIEW_AUDIT_LOG,Action.VIEW_ACCOUNT_STATUS));
   PERMISSIONS.put(Role.ADMINISTRATOR,EnumSet.allOf(Action.class));
  }
  public boolean isAllowed(Role role,Action action){return role!=null&&action!=null&&PERMISSIONS.getOrDefault(role,Set.of()).contains(action);}
