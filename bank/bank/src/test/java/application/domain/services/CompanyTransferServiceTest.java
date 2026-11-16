@@ -89,4 +89,17 @@ class CompanyTransferServiceTest {
             accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
     }
 
+    @Test
+    void approvalRejectsTransferWhenFundsAreInsufficient() {
+        BankTransfer transfer = service.create("COMPANY001", "4000000001", "4000000002",
+            Money.of("11000000.00"), "company-operator", Role.COMPANY_OPERATIONS_EMPLOYEE);
+
+        assertThrows(IllegalStateException.class, () -> service.approve(transfer.getId(),
+            "supervisor01", Role.COMPANY_SUPERVISOR, "COMPANY001"));
+        assertEquals(TransferStatus.PENDING_APPROVAL,
+            transfers.findById(transfer.getId()).orElseThrow().getStatus());
+        assertEquals(Money.of("10000000.00"),
+            accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
+    }
+
 }
