@@ -14,6 +14,21 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 @RestController @RequestMapping("/api/companies")
 public class CompanyController {
+
+ @PostMapping("/{id}/block") public Map<String,Object> block(@PathVariable String id,Authentication actor){
+  if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
+  Company company=companies.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Company not found"));
+  company.block();companies.save(company);
+  audit.record("COMPANY_BLOCKED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),id,Map.of());
+  return Map.of("id",id,"active",company.isActive(),"blocked",company.isBlocked());
+ }
+ @PostMapping("/{id}/unblock") public Map<String,Object> unblock(@PathVariable String id,Authentication actor){
+  if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
+  Company company=companies.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Company not found"));
+  company.unblock();companies.save(company);
+  audit.record("COMPANY_UNBLOCKED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),id,Map.of());
+  return Map.of("id",id,"active",company.isActive(),"blocked",company.isBlocked());
+ }
  private final CompanyRepository companies;private final CustomerRepository customers;private final AuditService audit;
  public CompanyController(CompanyRepository c,CustomerRepository customers,AuditService a){companies=c;this.customers=customers;audit=a;}
  public record CreateCompany(@NotBlank String id,@NotBlank String legalName,@NotBlank String nit,@NotBlank @jakarta.validation.constraints.Email String email,@NotBlank @Pattern(regexp="\\d{7,15}") String phone,@NotBlank String address,@NotBlank String legalRepresentativeId){}
