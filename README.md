@@ -124,7 +124,7 @@ El empleado comercial solo puede consultar los perfiles que tenga asignados.
 - `POST /api/accounts/{number}/deposit`, `POST /api/accounts/{number}/withdraw` — depósitos y retiros.
 - `POST /api/transfers/internal` — transferencia interna.
 - `GET /api/transfers/history/{accountNumber}` — historial de una cuenta, sujeto a permisos de titularidad o ventanilla.
-- `POST /api/company-transfers`, `GET /api/company-transfers/pending`, `POST /api/company-transfers/{id}/approve`, `POST /api/company-transfers/{id}/reject` — transferencias de empresa y cola de aprobación filtrada por compañía.
+- `POST /api/company-transfers`, `POST /api/company-transfers/batch`, `GET /api/company-transfers/pending`, `POST /api/company-transfers/{id}/approve`, `POST /api/company-transfers/{id}/reject` — transferencias de empresa y cola de aprobación filtrada por compañía.
 - `POST /api/scheduled-transfers`, `POST /api/scheduled-transfers/{id}/cancel` — transferencias programadas.
 - `POST /api/loans`, `GET /api/loans/{id}`, `POST /api/loans/{id}/approve`, `POST /api/loans/{id}/reject`, `POST /api/loans/{id}/disburse` — solicitudes, consulta según rol, decisiones y desembolsos de préstamos.
 - `GET /api/audit` — bitácora completa, solo para analistas internos y administradores.
