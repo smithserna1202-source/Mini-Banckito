@@ -13,6 +13,8 @@ public class CompanyJpaAdapter implements CompanyRepository {
  @Override public void save(Company company){repository.save(new CompanyEntity(company));}
  @Override public Optional<Company> findById(String id){return repository.findById(id).map(this::toDomain);}
  @Override public Optional<Company> findByNit(String nit){return repository.findByNit(nit).map(this::toDomain);}
+ @Override public Optional<Company> findByEmail(String email){return repository.findByEmailIgnoreCase(email).map(this::toDomain);}
+ @Override public Optional<Company> findByPhone(String phone){return repository.findByPhone(phone).map(this::toDomain);}
  private Company toDomain(CompanyEntity e){
   Company c=new Company(e.getId(),e.getLegalName(),e.getNit(),new Email(e.getEmail()),e.getPhone()==null?null:new PhoneNumber(e.getPhone()),e.getAddress(),e.getLegalRepresentativeId());
   if(!e.isActive())c.deactivate();
