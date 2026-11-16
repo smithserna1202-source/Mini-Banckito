@@ -17,7 +17,15 @@ public class BankProductController {
  private final BankProductRepository products;private final AuditService audit;
  public BankProductController(BankProductRepository p,AuditService a){products=p;audit=a;}
  public record CreateProduct(@NotBlank String id,@NotBlank String name,@NotNull ProductType type,String description,@DecimalMin("0.00") BigDecimal interestRate){}
- @GetMapping public Object list(){return products.findAllActive().stream().map(p->Map.of("id",p.getId(),"name",p.getName(),"type",p.getType(),"description",p.getDescription(),"interestRate",p.getInterestRate()==null?"":p.getInterestRate().toPlainString())).toList();}
+ @GetMapping public Object list(Authentication actor){
+  boolean teller=AuthenticatedActor.role(actor)==Role.TELLER;
+  return products.findAllActive().stream().map(p->{
+   Map<String,Object> item=new java.util.LinkedHashMap<>();
+   item.put("id",p.getId());item.put("name",p.getName());item.put("type",p.getType());item.put("description",p.getDescription());
+   if(!teller)item.put("interestRate",p.getInterestRate());
+   return item;
+  }).toList();
+ }
  @PostMapping public Map<String,Object> create(@Valid @RequestBody CreateProduct r,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   if(products.findById(r.id()).isPresent())throw new ResponseStatusException(HttpStatus.CONFLICT,"Product id already exists");
