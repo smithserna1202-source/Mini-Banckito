@@ -7,12 +7,14 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 /**
  * Creates non-production demonstration users on first startup only.
  * Existing users are never overwritten, so password and enabled-state changes persist.
  */
 @Component
+@Profile("sql")
 public class BankUserBootstrap implements ApplicationRunner {
     private static final String[][] USERS = {
         {"natural-customer", "NATURAL_PERSON_CUSTOMER", "C001", ""},
