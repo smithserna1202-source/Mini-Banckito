@@ -19,11 +19,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 @RestController @RequestMapping("/api/transfers")
 public class TransferController {
  private final BankAccountRepository accounts;private final TransactionRepository transactions;private final AuthorizationService auth;private final InternalTransferService transfers;private final AuditService audit;
  public TransferController(BankAccountRepository a,TransactionRepository t,AuthorizationService z,AuditService audit){accounts=a;transactions=t;auth=z;this.audit=audit;transfers=new InternalTransferService();}
  public record TransferRequest(@NotBlank String sourceAccount,@NotBlank String destinationAccount,@NotNull @DecimalMin("0.01") BigDecimal amount){}
+ @Transactional
  @PostMapping("/internal") public Map<String,Object> transfer(@Valid @RequestBody TransferRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);auth.require(role,AuthorizationService.Action.REQUEST_TRANSFER);
   String requester=AuthenticatedActor.id(actor);BankAccount source=find(r.sourceAccount()),target=find(r.destinationAccount());
