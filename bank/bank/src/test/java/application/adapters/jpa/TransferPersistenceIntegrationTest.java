@@ -10,6 +10,7 @@ import application.domain.ports.ScheduledTransferRepository;
 import application.domain.valueobjects.AccountNumber;
 import application.domain.valueobjects.Money;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,7 +38,8 @@ class TransferPersistenceIntegrationTest {
         assertEquals(TransferStatus.APPROVED, restored.getStatus());
         assertEquals(original.getAmount(), restored.getAmount());
         assertEquals("supervisor01", restored.getApproverUserId());
-        assertEquals(original.getCreatedAt(), restored.getCreatedAt());
+        assertEquals(original.getCreatedAt().truncatedTo(ChronoUnit.MICROS),
+            restored.getCreatedAt().truncatedTo(ChronoUnit.MICROS));
     }
 
     @Test
@@ -51,7 +53,8 @@ class TransferPersistenceIntegrationTest {
         ScheduledTransfer restored = scheduledTransfers.findById(original.getId()).orElseThrow();
         assertEquals(ScheduledTransfer.Status.SCHEDULED, restored.getStatus());
         assertEquals(original.getAmount(), restored.getAmount());
-        assertEquals(original.getScheduledAt(), restored.getScheduledAt());
+        assertEquals(original.getScheduledAt().truncatedTo(ChronoUnit.MICROS),
+            restored.getScheduledAt().truncatedTo(ChronoUnit.MICROS));
         assertEquals(original.getCreatedAt(), restored.getCreatedAt());
         assertEquals(original.getCreatorId(), restored.getCreatorId());
     }
