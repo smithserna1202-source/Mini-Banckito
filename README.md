@@ -76,7 +76,7 @@ Swagger UI y la documentación OpenAPI son públicos para facilitar la exploraci
 
 ## Usuarios y roles de demostración
 
-La aplicación usa HTTP Basic, BCrypt y autoridades definidas en el servidor. Los usuarios de desarrollo se cargan en memoria:
+La aplicación usa HTTP Basic, BCrypt y autoridades definidas en el servidor. Los usuarios iniciales de demostración se crean una sola vez en MySQL; sus contraseñas se almacenan con BCrypt. Los cambios de contraseña y las desactivaciones persisten entre reinicios:
 
 | Usuario | Rol |
 |---|---|
@@ -101,6 +101,17 @@ Ejemplo de consulta autenticada:
 ```bash
 curl -u C001:$BANK_DEFAULT_PASSWORD http://localhost:8080/api/customers/C001
 ```
+
+## Administración de usuarios
+
+Al iniciar por primera vez, la aplicación crea usuarios de demostración en la tabla `bank_users` usando `BANK_DEFAULT_PASSWORD` o las contraseñas individuales configuradas. No sobrescribe usuarios existentes.
+
+Solo el rol `ADMINISTRATOR` puede gestionar usuarios mediante:
+- `POST /api/admin/users` — crear un usuario con nombre, contraseña (mínimo 12 caracteres), rol y entidad asociada.
+- `POST /api/admin/users/{username}/deactivate` — desactivar un usuario; la autenticación rechaza usuarios deshabilitados.
+- `POST /api/admin/users/{username}/customers/{customerId}` — asignar un cliente activo a un empleado comercial.
+
+El empleado comercial solo puede consultar los perfiles que tenga asignados.
 
 ## API disponible
 
@@ -133,7 +144,7 @@ curl -u teller01:$BANK_DEFAULT_PASSWORD -X POST http://localhost:8080/api/accoun
 - Las transferencias empresariales que superan `BANK_COMPANY_TRANSFER_APPROVAL_THRESHOLD` requieren aprobación, y las transferencias pendientes vencen después de 60 minutos. Las transferencias ejecutadas registran débitos y créditos en el historial SQL. Las transferencias programadas se procesan cada 30 segundos.
 - El servicio interbancario externo rechaza la operación porque no existe integración de liquidación con otra entidad.
 - El umbral de aprobación de transferencias empresariales es configurable mediante `BANK_COMPANY_TRANSFER_APPROVAL_THRESHOLD` (valor inicial de demostración: 5.000.000). El enunciado académico no fija un importe universal ni define un límite diario; por eso no se inventa un tope diario.
-- Los usuarios/roles de demostración se precargan en memoria; falta gestión completa de credenciales, altas/bajas y asociación persistente entre empleados, clientes y empresas.
+- Los usuarios y sus roles se guardan en MySQL; las credenciales usan BCrypt y las cuentas desactivadas no pueden autenticarse. Los administradores pueden crear/desactivar usuarios y asignar clientes a empleados comerciales. La asociación de usuarios empresariales se configura mediante `BANK_COMPANY_ID_*`.
 - La configuración de seguridad es demostrativa para uso académico, no apta para producción bancaria.
 
 ## Pruebas
