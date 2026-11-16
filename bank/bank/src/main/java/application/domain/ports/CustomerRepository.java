@@ -6,4 +6,5 @@ public interface CustomerRepository {
  Optional<Customer> findById(String id);
  Optional<Customer> findByIdentification(String identification);
  Optional<Customer> findByEmail(String email);
+ Optional<Customer> findByPhone(String phone);
 }
