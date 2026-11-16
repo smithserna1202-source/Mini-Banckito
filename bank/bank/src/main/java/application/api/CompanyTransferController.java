@@ -18,19 +18,19 @@ public class CompanyTransferController {
  public record CreateRequest(@NotBlank String sourceAccount,@NotBlank String destinationAccount,@NotNull @DecimalMin("0.01") BigDecimal amount){}
  @PostMapping public Map<String,String> create(@Valid @RequestBody CreateRequest r,Authentication actor){
   Role role=AuthenticatedActor.role(actor);if(role!=Role.COMPANY_OPERATIONS_EMPLOYEE&&role!=Role.COMPANY_CUSTOMER&&role!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Role cannot create company transfers");
-  String actorId=AuthenticatedActor.id(actor);String companyId=role==Role.ADMINISTRATOR?actorId: "COMPANY001";
+  String actorId=AuthenticatedActor.id(actor);String companyId=role==Role.ADMINISTRATOR?"COMPANY001":AuthenticatedActor.companyId(actor);
   BankTransfer t=transfers.create(companyId,r.sourceAccount(),r.destinationAccount(),Money.of(r.amount().toPlainString()),actorId,role);
   return Map.of("transferId",t.getId(),"status",t.getStatus().name());
  }
  @PostMapping("/{id}/approve") public Map<String,String> approve(@PathVariable String id,Authentication actor){
   Role role=AuthenticatedActor.role(actor);
-  String companyId=role==Role.ADMINISTRATOR?"COMPANY001":"COMPANY001";
+  String companyId=AuthenticatedActor.companyId(actor);
   transfers.approve(id,AuthenticatedActor.id(actor),role,companyId);
   return Map.of("transferId",id,"status","APPROVED_OR_EXPIRED");
  }
  @PostMapping("/{id}/reject") public Map<String,String> reject(@PathVariable String id,Authentication actor){
   Role role=AuthenticatedActor.role(actor);
-  String companyId="COMPANY001";
+  String companyId=AuthenticatedActor.companyId(actor);
   transfers.reject(id,AuthenticatedActor.id(actor),role,companyId);
   return Map.of("transferId",id,"status","REJECTED_OR_EXPIRED");
  }
