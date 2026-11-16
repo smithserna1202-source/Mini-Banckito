@@ -5,6 +5,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import application.domain.models.AuditLogEntry;
+import application.domain.ports.AuditLogRepository;
+import application.domain.ports.BankAccountRepository;
+import application.domain.models.BankAccount;
+import application.domain.valueobjects.AccountNumber;
+import application.domain.valueobjects.Money;
+import application.domain.enums.AccountType;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +30,8 @@ import org.springframework.test.web.servlet.MockMvc;
 })
 class SecurityApiIntegrationTest {
     @Autowired private MockMvc mvc;
+    @Autowired private BankAccountRepository accounts;
+    @Autowired private AuditLogRepository audit;
 
     @Test
     void healthEndpointIsPublic() throws Exception {
