@@ -10,6 +10,16 @@ public final class AuthenticatedActor {
         if (authentication == null || !authentication.isAuthenticated()) throw new SecurityException("Authentication required");
         return authentication.getName();
     }
+    public static String companyId(Authentication authentication) {
+        Role role = role(authentication);
+        return switch (role) {
+            case COMPANY_CUSTOMER -> id(authentication);
+            case COMPANY_OPERATIONS_EMPLOYEE, COMPANY_SUPERVISOR -> "COMPANY001";
+            case ADMINISTRATOR -> null;
+            default -> throw new SecurityException("User is not associated with a company");
+        };
+    }
+
     public static Role role(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) throw new SecurityException("Authentication required");
         return authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority)
