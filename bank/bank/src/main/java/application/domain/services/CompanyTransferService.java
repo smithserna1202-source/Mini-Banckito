@@ -165,12 +165,11 @@ public class CompanyTransferService {
         if (source.getBalance().getAmountDecimal().compareTo(transfer.getAmount().getAmountDecimal()) < 0) {
             throw new IllegalStateException("Insufficient funds for company transfer approval");
         }
-        TransferStatus previousStatus=transfer.getStatus();
         transfer.approve(supervisorId);
         transfers.save(transfer);
         execute(transfer,supervisorId,role.name());
         audit.record("TRANSFER_APPROVED", supervisorId, role.name(), transfer.getId(),
-            Map.of("previousStatus",previousStatus.name(),"newStatus",transfer.getStatus().name(),
+            Map.of("previousStatus",previousStatus.name(),"newStatus",TransferStatus.APPROVED.name(),
                 "createdBy",transfer.getCreatorUserId(),"approvedBy",transfer.getApproverUserId(),
                 "approvedAt",transfer.getApprovedAt().toString()));
     }
