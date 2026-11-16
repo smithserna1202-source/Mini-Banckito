@@ -111,7 +111,7 @@ public class BankUserController {
                     || !customer.getEmail().getValue().equalsIgnoreCase(request.email())
                     || customer.getPhone() == null || !customer.getPhone().getNumber().equals(request.phone())
                     || !customer.getName().equals(request.fullName())
-                    || !customer.getBirthDate().equals(request.birthDate())) {
+                    || !java.util.Objects.equals(customer.getBirthDate(), request.birthDate())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "User identity details must match the linked customer profile");
             }
