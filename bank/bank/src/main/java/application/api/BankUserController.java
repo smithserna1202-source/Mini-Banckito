@@ -103,9 +103,18 @@ public class BankUserController {
             if (companyId != null && !companyId.isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Natural customers cannot have a company scope");
             }
-            customers.findById(request.relatedEntityId()).filter(c -> c.isActive())
+            application.domain.models.Customer customer = customers.findById(request.relatedEntityId())
+                .filter(c -> c.isActive())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "An active customer must be associated with this user"));
+            if (!customer.getIdentification().equals(request.identification())
+                    || !customer.getEmail().getValue().equalsIgnoreCase(request.email())
+                    || customer.getPhone() == null || !customer.getPhone().getNumber().equals(request.phone())
+                    || !customer.getName().equals(request.fullName())
+                    || !customer.getBirthDate().equals(request.birthDate())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "User identity details must match the linked customer profile");
+            }
         } else if (role == Role.COMPANY_CUSTOMER || role == Role.COMPANY_OPERATIONS_EMPLOYEE
                 || role == Role.COMPANY_SUPERVISOR) {
             if (companyId == null || companyId.isBlank()
