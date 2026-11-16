@@ -13,4 +13,11 @@ class AuthorizationServiceTest {
   assertTrue(auth.isAllowed(Role.INTERNAL_ANALYST,AuthorizationService.Action.APPROVE_LOAN));
   assertFalse(auth.isAllowed(Role.INTERNAL_ANALYST,AuthorizationService.Action.WITHDRAW));
  }
+ @Test void onlyCompanySupervisorMayApproveHighValueTransfers(){
+  AuthorizationService auth=new AuthorizationService();
+  assertTrue(auth.isAllowed(Role.COMPANY_SUPERVISOR,AuthorizationService.Action.APPROVE_HIGH_VALUE_TRANSFER));
+  assertFalse(auth.isAllowed(Role.COMPANY_CUSTOMER,AuthorizationService.Action.APPROVE_HIGH_VALUE_TRANSFER));
+  assertFalse(auth.isAllowed(Role.COMPANY_OPERATIONS_EMPLOYEE,AuthorizationService.Action.APPROVE_HIGH_VALUE_TRANSFER));
+ }
+
 }
