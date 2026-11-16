@@ -75,6 +75,14 @@ public class BankUserEntity implements UserDetails {
     }
 
     public void deactivate() { this.enabled = false; }
+    public void completeMissingDemoProfile() {
+        if (fullName == null || fullName.isBlank()) fullName = username;
+        if (identification == null || identification.isBlank()) identification = "DEMO-" + username;
+        if (email == null || email.isBlank()) email = username + "@demo.local";
+        if (phone == null || phone.isBlank()) phone = "3000000000";
+        if (birthDate == null) birthDate = LocalDate.of(1990, 1, 1);
+        if (address == null || address.isBlank()) address = "Datos de demostración";
+    }
     public String getRole() { return role; }
     public String getRelatedEntityId() { return relatedEntityId; }
     public String getCompanyId() { return companyId; }
