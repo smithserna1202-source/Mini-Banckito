@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,19 @@ public class CompanyTransferController {
   String actorId=AuthenticatedActor.id(actor);String companyId=role==Role.ADMINISTRATOR?"COMPANY001":AuthenticatedActor.companyId(actor);
   BankTransfer t=transfers.create(companyId,r.sourceAccount(),r.destinationAccount(),Money.of(r.amount().toPlainString()),actorId,role);
   return Map.of("transferId",t.getId(),"status",t.getStatus().name());
+ }
+
+ @GetMapping("/pending")
+ public List<Map<String,Object>> pending(Authentication actor){
+  Role role=AuthenticatedActor.role(actor);
+  if(role!=Role.COMPANY_CUSTOMER&&role!=Role.COMPANY_OPERATIONS_EMPLOYEE
+      &&role!=Role.COMPANY_SUPERVISOR&&role!=Role.ADMINISTRATOR)
+   throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Role cannot view company transfer queue");
+  String companyId=role==Role.ADMINISTRATOR?null:AuthenticatedActor.companyId(actor);
+  return transfers.findPendingForCompany(companyId).stream().map(t->Map.<String,Object>of(
+   "transferId",t.getId(),"sourceAccount",t.getSourceAccount(),"destinationAccount",t.getDestinationAccount(),
+   "amount",t.getAmount().toString(),"createdAt",t.getCreatedAt().toString(),
+   "createdBy",t.getCreatorUserId(),"status",t.getStatus().name())).toList();
  }
  @PostMapping("/{id}/approve") public Map<String,String> approve(@PathVariable String id,Authentication actor){
   Role role=AuthenticatedActor.role(actor);
