@@ -41,6 +41,7 @@ class SecurityApiIntegrationTest {
     @Autowired private AuditLogRepository audit;
     @Autowired private CustomerRepository customers;
     @Autowired private application.domain.ports.CompanyRepository companies;
+    @Autowired private application.domain.ports.BankProductRepository products;
     @Autowired private SpringDataBankUserRepository bankUsers;
     @Autowired private JpaBankUserDetailsService bankUserDetails;
     @Autowired private PasswordEncoder passwordEncoder;
@@ -246,6 +247,18 @@ class SecurityApiIntegrationTest {
 
         assertThrows(UsernameNotFoundException.class,
             () -> bankUserDetails.loadUserByUsername("company-operator-managed"));
+    }
+
+    @Test
+    void tellerCannotSeeProductInterestRateDetails() throws Exception {
+        products.save(new application.domain.models.BankProduct("LOAN-RISK-TEST", "Risk Test Loan",
+            application.domain.enums.ProductType.LOAN, "Test product", new java.math.BigDecimal("12.50")));
+
+        String response = mvc.perform(get("/api/products")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123")))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertFalse(response.contains("interestRate"));
     }
 
 }
