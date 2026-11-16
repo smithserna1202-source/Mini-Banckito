@@ -53,7 +53,7 @@ public class CompanyTransferService {
             .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
         BankAccount target = accounts.findByAccountNumber(destinationId)
             .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
-        if (!source.getOwnerId().equals(companyId)) {
+        if (role != Role.ADMINISTRATOR && !source.getOwnerId().equals(companyId)) {
             throw new SecurityException("Employee cannot operate on another company account");
         }
         if (source.getStatus() != AccountStatus.ACTIVE || target.getStatus() != AccountStatus.ACTIVE) {
