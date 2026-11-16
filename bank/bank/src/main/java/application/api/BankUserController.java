@@ -260,6 +260,27 @@ public class BankUserController {
             Role.ADMINISTRATOR.name(), customerId, java.util.Map.of("employeeUsername", username));
     }
 
+    @DeleteMapping("/{username}/customers/{customerId}")
+    @Transactional
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unassignCustomer(@PathVariable String username, @PathVariable String customerId,
+                                 Authentication authentication) {
+        requireAdministrator(authentication);
+        BankUserEntity employee = users.findById(username)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (!Role.COMMERCIAL_EMPLOYEE.name().equals(employee.getRole())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Only commercial employees can have customer assignments");
+        }
+        CommercialCustomerAssignmentEntity assignment = assignments
+            .findByEmployeeUsernameAndCustomerIdAndActiveTrue(username, customerId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Active assignment not found"));
+        assignment.deactivate();
+        assignments.save(assignment);
+        audit.record("CUSTOMER_UNASSIGNED_FROM_COMMERCIAL", AuthenticatedActor.id(authentication),
+            Role.ADMINISTRATOR.name(), customerId, java.util.Map.of("employeeUsername", username));
+    }
+
     private static void requireAdministrator(Authentication authentication) {
         if (AuthenticatedActor.role(authentication) != Role.ADMINISTRATOR) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Administrator role required");
