@@ -54,4 +54,24 @@ class SecurityApiIntegrationTest {
             .content(body))
             .andExpect(status().isForbidden());
     }
+    @Test
+    void customerCanOnlyReadAuditEventsForTheirOwnAccount() throws Exception {
+        String own = "6000000001";
+        String other = "6000000002";
+        accounts.save(new BankAccount(new AccountNumber(own), Money.zero(), "C001", AccountType.SAVINGS, "COP"));
+        accounts.save(new BankAccount(new AccountNumber(other), Money.zero(), "C002", AccountType.SAVINGS, "COP"));
+        audit.append(new AuditLogEntry("audit-own-1", "ACCOUNT_OPENED", "C001",
+            "NATURAL_PERSON_CUSTOMER", own, Map.of("source", "test")));
+        audit.append(new AuditLogEntry("audit-other-1", "ACCOUNT_OPENED", "C002",
+            "NATURAL_PERSON_CUSTOMER", other, Map.of("source", "test")));
+
+        mvc.perform(get("/api/audit/product/" + own)
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("C001", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+
+        mvc.perform(get("/api/audit/product/" + other)
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("C001", "Integration-Only-Password-123")))
+            .andExpect(status().isNotFound());
+    }
+
 }
