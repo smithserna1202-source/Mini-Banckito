@@ -87,6 +87,12 @@ public class BankUserController {
         if (users.existsById(request.username())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
         }
+        if (users.existsByIdentification(request.identification())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User identification already exists");
+        }
+        if (users.existsByEmail(request.email())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User email already exists");
+        }
 
         Role role = request.role();
         String companyId = request.companyId();
