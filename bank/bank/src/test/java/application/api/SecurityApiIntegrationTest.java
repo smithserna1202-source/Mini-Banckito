@@ -309,6 +309,28 @@ class SecurityApiIntegrationTest {
         mvc.perform(get("/api/accounts/7000000079/balance")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("TELLER-CUSTOMER-77", "New-Customer-Password-123")))
             .andExpect(status().isOk());
+
+        mvc.perform(post("/api/admin/users/TELLER-CUSTOMER-77/deactivate")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+
+        String blockedAccountBody = """
+            {"accountNumber":"7000000091","ownerId":"TELLER-CUSTOMER-77",
+             "type":"SAVINGS","initialBalance":0,"currency":"COP"}
+            """;
+        mvc.perform(post("/api/accounts")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(blockedAccountBody))
+            .andExpect(status().isConflict());
+
+        mvc.perform(post("/api/admin/users/TELLER-CUSTOMER-77/activate")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isOk());
+
+        mvc.perform(post("/api/accounts")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("teller01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(blockedAccountBody))
+            .andExpect(status().isOk());
     }
 
     @Test
