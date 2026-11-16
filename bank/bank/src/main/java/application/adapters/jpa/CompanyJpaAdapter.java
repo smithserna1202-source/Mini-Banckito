@@ -18,6 +18,7 @@ public class CompanyJpaAdapter implements CompanyRepository {
  private Company toDomain(CompanyEntity e){
   Company c=new Company(e.getId(),e.getLegalName(),e.getNit(),new Email(e.getEmail()),e.getPhone()==null?null:new PhoneNumber(e.getPhone()),e.getAddress(),e.getLegalRepresentativeId());
   if(!e.isActive())c.deactivate();
+  if(e.isBlocked())c.block();
   return c;
  }
 }
