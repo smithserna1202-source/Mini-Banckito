@@ -96,7 +96,7 @@ public class BankingConfiguration {
 
     @Bean @ConditionalOnMissingBean
     public ExecuteScheduledTransfersService executeScheduledTransfersService(ScheduledTransferRepository transfers,
-            BankAccountRepository accounts, AuditService audit) {
-        return new ExecuteScheduledTransfersService(transfers, accounts, audit);
+            BankAccountRepository accounts, AuditService audit, TransactionRepository transactions) {
+        return new ExecuteScheduledTransfersService(transfers, accounts, audit, transactions);
     }
 }
