@@ -26,7 +26,12 @@ public class CompanyController {
   return Map.of("id",c.getId(),"legalName",c.getLegalName(),"nit",c.getNit(),"active",c.isActive());
  }
  @GetMapping("/{id}") public Map<String,Object> get(@PathVariable String id,Authentication actor){
-  Role role=AuthenticatedActor.role(actor);if(role!=Role.ADMINISTRATOR&&!AuthenticatedActor.id(actor).equals(id))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Company access denied");
+  Role role=AuthenticatedActor.role(actor);
+  if(role!=Role.ADMINISTRATOR){
+   if(role!=Role.COMPANY_CUSTOMER&&role!=Role.COMPANY_OPERATIONS_EMPLOYEE&&role!=Role.COMPANY_SUPERVISOR)
+    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Company access denied");
+   if(!id.equals(AuthenticatedActor.companyId(actor)))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Company access denied");
+  }
   Company c=companies.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Company not found"));
   return Map.of("id",c.getId(),"legalName",c.getLegalName(),"nit",c.getNit(),"active",c.isActive());
  }
