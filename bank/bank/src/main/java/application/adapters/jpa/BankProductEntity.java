@@ -11,8 +11,9 @@ public class BankProductEntity {
  @Column(length=2000) private String description;
  @Column(precision=9,scale=4) private BigDecimal interestRate;
  @Column(nullable=false) private boolean active;
+ @Column(nullable=false) private boolean requiresApproval;
  protected BankProductEntity(){}
- public BankProductEntity(BankProduct p){id=p.getId();name=p.getName();type=p.getType();description=p.getDescription();interestRate=p.getInterestRate();active=p.isActive();}
+ public BankProductEntity(BankProduct p){id=p.getId();name=p.getName();type=p.getType();description=p.getDescription();interestRate=p.getInterestRate();active=p.isActive();requiresApproval=p.isRequiresApproval();}
  public String getId(){return id;} public String getName(){return name;} public ProductType getType(){return type;}
- public String getDescription(){return description;} public BigDecimal getInterestRate(){return interestRate;} public boolean isActive(){return active;}
+ public String getDescription(){return description;} public BigDecimal getInterestRate(){return interestRate;} public boolean isActive(){return active;} public boolean isRequiresApproval(){return requiresApproval;}
 }
