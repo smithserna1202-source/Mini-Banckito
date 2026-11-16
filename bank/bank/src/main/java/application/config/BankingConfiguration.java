@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.beans.factory.annotation.Value;
+import java.math.BigDecimal;
 
 @Configuration
 @EnableScheduling
@@ -72,9 +74,10 @@ public class BankingConfiguration {
     @Bean @ConditionalOnMissingBean
     public CompanyTransferService companyTransferService(BankAccountRepository accounts,
             BankTransferRepository transfers, AuthorizationService authorization, AuditService audit,
-            TransactionRepository transactions) {
+            TransactionRepository transactions,
+            @Value("${bank.company-transfers.approval-threshold:5000000}") BigDecimal approvalThreshold) {
         return new CompanyTransferService(accounts, transfers, authorization, audit,
-            application.domain.valueobjects.Money.of("5000000"), transactions);
+            new application.domain.valueobjects.Money(approvalThreshold), transactions);
     }
 
     @Bean @ConditionalOnMissingBean
