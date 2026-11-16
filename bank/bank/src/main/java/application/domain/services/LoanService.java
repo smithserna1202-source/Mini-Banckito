@@ -41,7 +41,7 @@ public class LoanService {
  }
  @Transactional
  public void request(Loan loan){
-  request(loan,loan.getApplicantId(),"CUSTOMER");
+  request(loan,loan.getApplicantId(),Role.NATURAL_PERSON_CUSTOMER);
  }
  @Transactional
  public void request(Loan loan,String requesterId,Role requesterRole){
