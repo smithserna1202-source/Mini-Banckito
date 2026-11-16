@@ -38,8 +38,12 @@ public class BankProductBootstrap implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         for (BankProduct product : DEFAULT_PRODUCTS) {
-            if (!products.existsById(product.getId())) {
+            BankProductEntity existing = products.findById(product.getId()).orElse(null);
+            if (existing == null) {
                 products.save(new BankProductEntity(product));
+            } else if (existing.isRequiresApproval() != product.isRequiresApproval()) {
+                existing.setRequiresApproval(product.isRequiresApproval());
+                products.save(existing);
             }
         }
     }
