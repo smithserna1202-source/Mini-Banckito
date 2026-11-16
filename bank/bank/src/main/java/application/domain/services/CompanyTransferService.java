@@ -90,6 +90,14 @@ public class CompanyTransferService {
                     "creatorUserId", transfer.getCreatorUserId()));
             return;
         }
+        BankAccount source = accounts.findByAccountNumber(transfer.getSourceAccount())
+            .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
+        if (source.getStatus() != AccountStatus.ACTIVE) {
+            throw new IllegalStateException("Source account is not active");
+        }
+        if (source.getBalance().getAmountDecimal().compareTo(transfer.getAmount().getAmountDecimal()) < 0) {
+            throw new IllegalStateException("Insufficient funds for company transfer approval");
+        }
         transfer.approve(supervisorId);
         transfers.save(transfer);
         audit.record("TRANSFER_APPROVED", supervisorId, role.name(), transfer.getId(),
