@@ -160,6 +160,21 @@ class SecurityApiIntegrationTest {
     }
 
     @Test
+    void userCreationRejectsDuplicatePhoneNumbers() throws Exception {
+        String body = """
+            {"username":"duplicate-phone-user","password":"New-Strong-Password-123",
+             "role":"TELLER","relatedEntityId":"TELLER-DUPLICATE-PHONE","companyId":null,
+             "fullName":"Duplicate Phone User","identification":"ID-DUPLICATE-PHONE",
+             "email":"duplicate-phone@example.test","phone":"3000000000",
+             "birthDate":"1990-01-01","address":"Test address"}
+            """;
+        mvc.perform(post("/api/admin/users")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123"))
+            .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isConflict());
+    }
+
+    @Test
     void userAdministrationListingIsRestrictedAndCompanyScoped() throws Exception {
         String adminUsers = mvc.perform(get("/api/admin/users")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
