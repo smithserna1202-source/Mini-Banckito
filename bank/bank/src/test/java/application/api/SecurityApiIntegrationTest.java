@@ -223,14 +223,6 @@ class SecurityApiIntegrationTest {
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isOk());
 
-        mvc.perform(delete("/api/admin/users/commercial-assigned-77/customers/" + customerId)
-            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
-            .andExpect(status().isNoContent());
-
-        mvc.perform(get("/api/customers/" + customerId)
-            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
-            .andExpect(status().isForbidden());
-
         String accountRequest = """
             {"accountNumber":"7000000077","ownerId":"CUSTOMER-ASSIGNED-77",
              "type":"SAVINGS","initialBalance":0,"currency":"COP"}
@@ -247,6 +239,14 @@ class SecurityApiIntegrationTest {
         mvc.perform(post("/api/accounts")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123"))
             .contentType(MediaType.APPLICATION_JSON).content(fundedAccountRequest))
+            .andExpect(status().isForbidden());
+
+        mvc.perform(delete("/api/admin/users/commercial-assigned-77/customers/" + customerId)
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("admin01", "Integration-Only-Password-123")))
+            .andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/customers/" + customerId)
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic("commercial-assigned-77", "Commercial-Password-123")))
             .andExpect(status().isForbidden());
 
         String loanRequest = """
