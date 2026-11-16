@@ -51,10 +51,20 @@ public class BankSecurityConfiguration {
             String username = env.getProperty("bank.security.users." + definition[0], definition[2]);
             String passwordKey = "BANK_PASSWORD_" + definition[0].replace('-', '_').toUpperCase();
             String password = env.getProperty(passwordKey, shared);
-            users.add(User.withUsername(username)
-                .password(encoder.encode(password))
-                .roles(definition[1])
-                .build());
+            User.UserBuilder builder = User.withUsername(username)
+                .password(encoder.encode(password));
+            String role = definition[1];
+            if (role.equals("COMPANY_CUSTOMER") || role.equals("COMPANY_OPERATIONS_EMPLOYEE")
+                    || role.equals("COMPANY_SUPERVISOR")) {
+                String companyId = env.getProperty("bank.security.company." + definition[0], "COMPANY001");
+                if (companyId == null || companyId.isBlank()) {
+                    throw new IllegalStateException("A company association is required for " + definition[0]);
+                }
+                builder.roles(role, "COMPANY_SCOPE_" + companyId);
+            } else {
+                builder.roles(role);
+            }
+            users.add(builder.build());
         }
         return new InMemoryUserDetailsManager(users);
     }
