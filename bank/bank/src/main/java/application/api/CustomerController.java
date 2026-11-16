@@ -17,6 +17,20 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController @RequestMapping("/api/customers")
 public class CustomerController {
 
+ @PostMapping("/{id}/deactivate") public Map<String,Object> deactivate(@PathVariable String id,Authentication actor){
+  if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
+  Customer entity=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
+  entity.deactivate();customers.save(entity);
+  audit.record("CUSTOMER_DEACTIVATED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),id,Map.of());
+  return Map.of("id",id,"active",entity.isActive(),"blocked",entity.isBlocked());
+ }
+ @PostMapping("/{id}/activate") public Map<String,Object> activate(@PathVariable String id,Authentication actor){
+  if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
+  Customer entity=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
+  entity.reactivate();customers.save(entity);
+  audit.record("CUSTOMER_ACTIVATED",AuthenticatedActor.id(actor),Role.ADMINISTRATOR.name(),id,Map.of());
+  return Map.of("id",id,"active",entity.isActive(),"blocked",entity.isBlocked());
+ }
  @PostMapping("/{id}/block") public Map<String,Object> block(@PathVariable String id,Authentication actor){
   if(AuthenticatedActor.role(actor)!=Role.ADMINISTRATOR)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Administrator role required");
   Customer customer=customers.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Customer not found"));
