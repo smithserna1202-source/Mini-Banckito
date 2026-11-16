@@ -7,11 +7,26 @@ import java.util.Objects;
 public final class Loan {
  private final String id,applicantId,loanType,destinationAccount; private final Money requestedAmount;
  private final int termMonths; private Money approvedAmount; private BigDecimal interestRate;
- private LoanStatus status=LoanStatus.UNDER_REVIEW; private final Instant requestedAt=Instant.now(); private Instant approvedAt,disbursedAt;
+ private LoanStatus status=LoanStatus.UNDER_REVIEW; private Instant requestedAt=Instant.now(); private Instant approvedAt,disbursedAt;
  public Loan(String id,String applicantId,String loanType,Money requestedAmount,int termMonths,String destinationAccount){
   if(id==null||id.isBlank()||applicantId==null||applicantId.isBlank()||loanType==null||loanType.isBlank())throw new IllegalArgumentException("Loan identity fields are required");
   if(requestedAmount==null||!requestedAmount.isPositive()||termMonths<=0)throw new IllegalArgumentException("Loan amount and term must be positive");
   this.id=id;this.applicantId=applicantId;this.loanType=loanType;this.requestedAmount=requestedAmount;this.termMonths=termMonths;this.destinationAccount=Objects.requireNonNull(destinationAccount);
+ }
+ public static Loan restore(String id,String applicantId,String loanType,Money requestedAmount,int termMonths,
+  String destinationAccount,Money approvedAmount,BigDecimal interestRate,LoanStatus status,
+  Instant requestedAt,Instant approvedAt,Instant disbursedAt){
+  Loan loan=new Loan(id,applicantId,loanType,requestedAmount,termMonths,destinationAccount);
+  loan.status=Objects.requireNonNull(status);
+  loan.requestedAt=Objects.requireNonNull(requestedAt);
+  loan.approvedAt=approvedAt;
+  loan.disbursedAt=disbursedAt;
+  loan.approvedAmount=approvedAmount;
+  loan.interestRate=interestRate;
+  if((status==LoanStatus.APPROVED||status==LoanStatus.DISBURSED)
+      &&(approvedAmount==null||!approvedAmount.isPositive()||interestRate==null||interestRate.signum()<0))
+   throw new IllegalArgumentException("Persisted approved loan data is invalid");
+  return loan;
  }
  public void approve(String analystId,Money amount,BigDecimal rate){
   requireReview();if(analystId==null||analystId.isBlank())throw new IllegalArgumentException("Analyst is required");
