@@ -12,6 +12,9 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -60,6 +63,39 @@ public class LoanController {
             Money.of(request.amount().toPlainString()), request.termMonths(), request.destinationAccount());
         loans.request(loan);
         return Map.of("loanId", loan.getId(), "status", loan.getStatus().name());
+    }
+
+
+    @GetMapping
+    public List<Map<String,Object>> list(Authentication actor) {
+        Role role=AuthenticatedActor.role(actor);
+        String requester=AuthenticatedActor.id(actor);
+        Set<String> commercialCustomers=role==Role.COMMERCIAL_EMPLOYEE
+            ?assignments.findByEmployeeUsernameAndActiveTrue(requester).stream()
+                .map(application.adapters.jpa.CommercialCustomerAssignmentEntity::getCustomerId)
+                .collect(Collectors.toSet()):Set.of();
+        return repository.findAll().stream().filter(loan->{
+            if(role==Role.ADMINISTRATOR||role==Role.INTERNAL_ANALYST)return true;
+            if(role==Role.NATURAL_PERSON_CUSTOMER)return loan.getApplicantId().equals(requester);
+            if(role==Role.COMPANY_CUSTOMER||role==Role.COMPANY_OPERATIONS_EMPLOYEE||role==Role.COMPANY_SUPERVISOR)
+                return loan.getApplicantId().equals(AuthenticatedActor.companyId(actor));
+            if(role==Role.COMMERCIAL_EMPLOYEE)return commercialCustomers.contains(loan.getApplicantId())
+                &&(loan.getStatus()==LoanStatus.UNDER_REVIEW||loan.getStatus()==LoanStatus.REJECTED);
+            return false;
+        }).map(loan->{
+            Map<String,Object> item=new LinkedHashMap<>();
+            item.put("loanId",loan.getId());item.put("status",loan.getStatus().name());
+            item.put("requestedAt",loan.getRequestedAt().toString());
+            item.put("requestedAmount",loan.getRequestedAmount().toString());
+            if(role!=Role.COMMERCIAL_EMPLOYEE){
+                item.put("applicantId",loan.getApplicantId());item.put("type",loan.getLoanType());
+                item.put("termMonths",loan.getTermMonths());
+                item.put("approvedAmount",loan.getApprovedAmount()==null?null:loan.getApprovedAmount().toString());
+                item.put("interestRate",loan.getInterestRate());item.put("approvedAt",loan.getApprovedAt());
+                item.put("disbursedAt",loan.getDisbursedAt());item.put("destinationAccount",loan.getDestinationAccount());
+            }
+            return item;
+        }).toList();
     }
 
     @GetMapping("/{id}")
