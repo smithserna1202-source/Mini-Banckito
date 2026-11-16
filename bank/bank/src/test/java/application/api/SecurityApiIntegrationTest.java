@@ -321,4 +321,10 @@ class SecurityApiIntegrationTest {
         assertEquals(Money.of("200"), accounts.findByAccountNumber("8000000083").orElseThrow().getBalance());
     }
 
+    @Test
+    void seededCatalogMarksLoanProductsAsApprovalRequired() {
+        assertTrue(products.findById("LOAN_PERSONAL").orElseThrow().isRequiresApproval());
+        assertTrue(products.findById("CREDIT_CARD").orElseThrow().isRequiresApproval());
+    }
+
 }
