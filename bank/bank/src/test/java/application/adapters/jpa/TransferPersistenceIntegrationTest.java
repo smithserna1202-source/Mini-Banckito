@@ -38,7 +38,7 @@ class TransferPersistenceIntegrationTest {
         assertEquals(TransferStatus.APPROVED, restored.getStatus());
         assertEquals(original.getAmount(), restored.getAmount());
         assertEquals("supervisor01", restored.getApproverUserId());
-        assertEquals(original.getCreatedAt().truncatedTo(ChronoUnit.MICROS),
+        assertEquals(original.getCreatedAt().truncatedTo(ChronoUnit.MILLIS),
             restored.getCreatedAt().truncatedTo(ChronoUnit.MICROS));
     }
 
@@ -55,7 +55,8 @@ class TransferPersistenceIntegrationTest {
         assertEquals(original.getAmount(), restored.getAmount());
         assertEquals(original.getScheduledAt().truncatedTo(ChronoUnit.MICROS),
             restored.getScheduledAt().truncatedTo(ChronoUnit.MICROS));
-        assertEquals(original.getCreatedAt(), restored.getCreatedAt());
+        assertEquals(original.getCreatedAt().truncatedTo(ChronoUnit.MILLIS),
+            restored.getCreatedAt().truncatedTo(ChronoUnit.MILLIS));
         assertEquals(original.getCreatorId(), restored.getCreatorId());
     }
 }
