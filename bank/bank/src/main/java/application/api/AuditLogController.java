@@ -53,7 +53,7 @@ public class AuditLogController {
                 .orElseGet(() -> transfers.findById(productId)
                     .map(transfer -> {
                         boolean ownsSource = accounts.findByAccountNumber(transfer.getSourceAccount())
-                            .map(account -> account.getOwnerId().equals(requester)).orElse(false);
+                            .map(account -> account.getOwnerId().equals(ownerScope)).orElse(false);
                         boolean ownsDestination = accounts.findByAccountNumber(transfer.getDestinationAccount())
                             .map(account -> account.getOwnerId().equals(requester)).orElse(false);
                         return ownsSource || ownsDestination;
