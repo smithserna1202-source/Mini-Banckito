@@ -66,7 +66,7 @@ class CompanyTransferServiceTest {
         assertEquals(TransferStatus.EXECUTED, transfers.findById(transfer.getId()).orElseThrow().getStatus());
         assertEquals(Money.of("4000000.00"), accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
         assertEquals(Money.of("6000000.00"), accounts.findByAccountNumber("4000000002").orElseThrow().getBalance());
-        assertEquals(2, auditEntries.findAll().size());
+        assertEquals(3, auditEntries.findAll().size());
         assertEquals(TransactionType.DEBIT_TRANSFER, transactionEntries.findByAccountId("4000000001").get(0).getType());
         assertEquals(TransactionType.CREDIT_TRANSFER, transactionEntries.findByAccountId("4000000002").get(0).getType());
     }
@@ -76,4 +76,17 @@ class CompanyTransferServiceTest {
         assertThrows(SecurityException.class, () -> service.create("COMPANY001",
             "4000000001", "4000000002", Money.of("100.00"), "teller01", Role.TELLER));
     }
+    @Test
+    void supervisorCannotApproveAnotherCompanyTransfer() {
+        BankTransfer transfer = service.create("COMPANY001", "4000000001", "4000000002",
+            Money.of("6000000.00"), "company-operator", Role.COMPANY_OPERATIONS_EMPLOYEE);
+
+        assertThrows(SecurityException.class, () -> service.approve(transfer.getId(),
+            "supervisor-from-other-company", Role.COMPANY_SUPERVISOR, "COMPANY002"));
+        assertEquals(TransferStatus.PENDING_APPROVAL,
+            transfers.findById(transfer.getId()).orElseThrow().getStatus());
+        assertEquals(Money.of("10000000.00"),
+            accounts.findByAccountNumber("4000000001").orElseThrow().getBalance());
+    }
+
 }
