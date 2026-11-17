@@ -65,3 +65,28 @@ jobs:
           fi
           curl --fail --silent http://localhost:8080/v3/api-docs > /dev/null
           curl --fail --silent http://localhost:8080/swagger-ui.html > /dev/null
+
+          # Exercise real MySQL writes and MongoDB append-only audit persistence.
+          ACCOUNT_NUMBER="9999000001"
+          curl --fail --silent --show-error -u "teller01:$BANK_DEFAULT_PASSWORD" \
+            -H "Content-Type: application/json" \
+            -d "{\"accountNumber\":\"$ACCOUNT_NUMBER\",\"ownerId\":\"C001\",\"type\":\"SAVINGS\",\"initialBalance\":1000,\"currency\":\"COP\"}" \
+            http://localhost:8080/api/accounts > /dev/null
+
+          curl --fail --silent --show-error -u "teller01:$BANK_DEFAULT_PASSWORD" \
+            -H "Content-Type: application/json" \
+            -d '{"amount":500}' \
+            "http://localhost:8080/api/accounts/$ACCOUNT_NUMBER/deposit" > /dev/null
+
+          BALANCE=$(curl --fail --silent --show-error -u "teller01:$BANK_DEFAULT_PASSWORD" \
+            "http://localhost:8080/api/accounts/$ACCOUNT_NUMBER/balance")
+          echo "$BALANCE" | grep -q "1500"
+
+          HISTORY=$(curl --fail --silent --show-error -u "teller01:$BANK_DEFAULT_PASSWORD" \
+            "http://localhost:8080/api/transfers/history/$ACCOUNT_NUMBER")
+          echo "$HISTORY" | grep -q "DEPOSIT"
+
+          AUDIT=$(curl --fail --silent --show-error -u "analyst01:$BANK_DEFAULT_PASSWORD" \
+            http://localhost:8080/api/audit)
+          echo "$AUDIT" | grep -q "ACCOUNT_OPENED"
+          echo "$AUDIT" | grep -q "DEPOSIT"
