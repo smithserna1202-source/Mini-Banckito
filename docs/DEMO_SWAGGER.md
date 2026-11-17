@@ -54,7 +54,7 @@ En Swagger, pulsar **Authorize** e introducir el usuario de demostración y la c
 
 ## 3. Roles de demostración
 
-Los usuarios iniciales son `C001`, `COMPANY001`, `teller01`, `commercial01`, `company-operator`, `supervisor01`, `analyst01` y `admin01`. Todos utilizan la contraseña local configurada en `BANK_DEFAULT_PASSWORD), salvo que se hayan definido contraseñas individuales.
+Los usuarios iniciales son `C001`, `COMPANY001`, `teller01`, `commercial01`, `company-operator`, `supervisor01`, `analyst01` y `admin01`. Todos utilizan la contraseña local configurada en `BANK_DEFAULT_PASSWORD`, salvo que se hayan definido contraseñas individuales.
 
 ## 4. Cierre de la demostración
 
